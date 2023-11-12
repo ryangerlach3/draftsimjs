@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Team Draft Simulator</title>
+    <!-- Add CSS here if needed -->
+</head>
+<body>
+    <h1>Team Draft Simulator</h1>
+
+    <!-- Input for number of players per team -->
+    <label for="numPlayersPerTeam">Enter the number of players per team:</label>
+    <input type="number" id="numPlayersPerTeam" min="1">
+    <button id="setNumPlayersPerTeam">Set Players</button>
+
+    <!-- Configuration choice -->
+    <div id="configChoiceSection" style="display:block;">
+        <p>Choose an on-field position configuration:</p>
+        <button class="configButton" data-config="1">1: 2-3-1-2</button>
+        <button class="configButton" data-config="2">2: 5-7-1-5</button>
+        <button class="configButton" data-config="3">3: 6-8-2-6</button>
+    </div>
+
+    <!-- Number of teams -->
+    <div id="numTeamsSection" style="display:block;">
+        <label for="numTeams">Enter the number of teams in the draft:</label>
+        <input type="number" id="numTeams" min="2">
+        <button id="setNumTeams">Set Teams</button>
+
+    </div>
+
+    <!-- User's draft position -->
+    <div id="userDraftPositionSection" style="display:block;">
+        <label for="userDraftPosition">Enter your draft position:</label>
+        <input type="number" id="userDraftPosition" min="1">
+        <button id="setUserDraftPosition">Set Position</button>
+    </div>
+
+    <!-- User's choice for draft type -->
+    <div id="draftTypeSection" style="display:block;">
+        <p>Select the type of draft:</p>
+        <input type="radio" id="snake" name="draftType" value="snake">
+        <label for="snake">Snake Draft</label><br>
+        <input type="radio" id="linear" name="draftType" value="linear">
+        <label for="linear">Linear Draft</label><br>
+        <button id="setDraftType">Set Draft Type</button>
+    </div>
+    <br>
+    <button id="startDraftButton">Start Draft</button>
+
+    <!-- Display area for messages and results -->
+    <div id="displayArea"></div>
+
+    <script src="players.js"></script>
+    <script src="main.js"></script>
+
+</body>
