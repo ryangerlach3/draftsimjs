@@ -1,63 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Team Draft Simulator</title>
-    <!-- Add CSS here if needed -->
+    <title>Keeper League Mock Draft Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="main.css">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/dataTables.jqueryui.min.css">
+
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables JavaScript -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+
+    <!-- Firebase JavaScript -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Team Draft Simulator</h1>
+    <h1 class="margin-bottom-0">Keeper League Mock Draft Simulator</h1>
 
-    <!-- Input for number of players per team -->
-    <label for="numPlayersPerTeam">Enter the number of players per team:</label>
-    <input type="number" id="numPlayersPerTeam" min="1">
-    <button id="setNumPlayersPerTeamButton">Set Players</button>
-
-    <!-- Configuration choice -->
-    <div id="configChoiceSection" style="display:none;">
+    <div class="tab">
+        <button id="adpButton" class="tablinks" onclick="openTab(event, 'adp')">ADP</button>
+        <button id="autoDraftButton" class="tablinks" onclick="openTab(event, 'autoDraft')">Quick Draft</button>
+        <button id="manualDraftButton" class="tablinks" onclick="openTab(event, 'manualDraft')">Detailed Draft</button>
+        <button id="playersButton" class="tablinks hidden" onclick="openTab(event, 'players')">Select Player</button>
+        <button id="myTeamButton" class="tablinks hidden" onclick="openTab(event, 'myTeam')">My Team</button>
+        <button id="allTeamButton" class="tablinks hidden" onclick="openTab(event, 'allTeam')">All Teams</button>
+        <button id="pickLogButton" class="tablinks hidden" onclick="openTab(event, 'pickLog')">Pick Log</button>
+        <button id="resetButton" class="tablinks hidden red">Reset</button>
+      </div>
+      
+    <div id="adp" class="tabcontent hidden">
+        <h3>Average Draft Position</h3>
+        <table id="ADPTable"></table>
+    </div>
+      
+    <div id="autoDraft" class="tabcontent hidden">
+        <h3>Quick Draft Setup</h3>
         <p>Choose an on-field position configuration:</p>
-        <button class="configButton" data-config="1">1: 2-3-1-2</button>
-        <button class="configButton" data-config="2">2: 5-7-1-5</button>
-        <button class="configButton" data-config="3">3: 6-8-2-6</button>
+        <button class="test" id="test1">Test 2-3-1-2</button>
+        <button class="test" id="test2">Test 5-7-1-5</button>
+        <button class="test" id="test3">Test 6-8-2-6</button>
+    </div>
+      
+    <div id="manualDraft" class="tabcontent hidden">
+        <h3>Detailed Draft Setup</h3>
+        <div id="configChoiceSection">
+            <p>Choose an on-field position configuration:</p>
+            <button class="configButton" data-config="1" data-min="8">2-3-1-2</button>
+            <button class="configButton" data-config="2" data-min="18">5-7-1-5</button>
+            <button class="configButton" data-config="3" data-min="22">6-8-2-6</button>
+        </div>
+        <br>
+        <div id="numPlayersPerTeamSection" class="hidden">
+            <label for="numPlayersPerTeam">Enter the number of players per team:</label>
+            <input type="number" id="numPlayersPerTeam" min="1">
+            <button id="setNumPlayersPerTeamButton">Set Max. Player</button>
+        </div>
+        <br>
+        <div id="numTeamsSection" class="hidden">
+            <label for="numTeams">Enter the number of teams in the draft:</label>
+            <input type="number" id="numTeams" min="2">
+            <button id="setNumTeamsButton">Set Teams</button>
+        </div>
+        <br>
+        <div id="userDraftPositionSection" class="hidden">
+            <label for="userDraftPosition">Enter your draft position:</label>
+            <input type="number" id="userDraftPosition" min="1">
+            <button id="setUserDraftPositionButton">Set Position</button>
+        </div>
+        <br>
+        <div id="draftTypeSection" class="hidden">
+            <p>Select the type of draft:</p>
+            <input type="radio" id="snake" name="draftType" value="snake">
+            <label for="snake">Snake Draft</label><br>
+            <input type="radio" id="linear" name="draftType" value="linear">
+            <label for="linear">Linear Draft</label><br>
+            <button id="setDraftTypeButton">Set Draft Type</button>
+        </div>
     </div>
 
-    <!-- Number of teams -->
-    <div id="numTeamsSection" style="display:none;">
-        <label for="numTeams">Enter the number of teams in the draft:</label>
-        <input type="number" id="numTeams" min="2">
-        <button id="setNumTeamsButton">Set Teams</button>
-
+    <div id="players" class="tabcontent hidden">
+        <h3 id="currentPickSelection"></h3>
+        <h3>Select Player</h3>
+        <label>
+            Position:
+            <br>
+            <select id="positionFilter">
+                <option value="">All</option>
+                <option value="Defender">Defender</option>
+                <option value="Forward">Forward</option>
+                <option value="Ruck">Ruck</option>
+                <option value="Midfielder">Midfielder</option>
+            </select>
+        </label>        
+        <table id="selectPlayerTable"></table>
     </div>
 
-    <!-- User's draft position -->
-    <div id="userDraftPositionSection" style="display:none;">
-        <label for="userDraftPosition">Enter your draft position:</label>
-        <input type="number" id="userDraftPosition" min="1">
-        <button id="setUserDraftPositionButton">Set Position</button>
+    <div id="myTeam" class="tabcontent hidden">
+        <h3>My Team</h3>
+        <table id="myTeamTable"></table>
     </div>
 
-    <!-- User's choice for draft type -->
-    <div id="draftTypeSection" style="display:none;">
-        <p>Select the type of draft:</p>
-        <input type="radio" id="snake" name="draftType" value="snake">
-        <label for="snake">Snake Draft</label><br>
-        <input type="radio" id="linear" name="draftType" value="linear">
-        <label for="linear">Linear Draft</label><br>
-        <button id="setDraftTypeButton">Set Draft Type</button>
+    <div id="allTeam" class="tabcontent hidden">
+        <h3>All Teams</h3>
+        <table id="allTeamsTable"></table>
+    </div>
+
+    <div id="pickLog" class="tabcontent hidden">
+        <h3>Pick Log</h3>
+        <table id="pickLogTable"></table>
     </div>
 
     <br>
-    <button id="startDraftButton">Start Draft</button>
+    <button id="startDraftButton" class="button-start hidden" disabled>Start Draft</button>
 
-    <!-- New Section for Displaying Available Players -->
-    <div id="playerListContainer" style="display:none;">
-        <h2>Select a Player</h2>
-        <!-- The player list will be dynamically populated here -->
+    <div id="positionSelectionModal" class="modal">
+        <div id="buttonContainer" class="modal-content">
+            <h3 id="selectPlayerPosition" class="margin-top-0">Select Position</h3>
+            <div id="positionButtons"></div>
+        </div>
     </div>
 
-    <!-- Display area for messages and results -->
-    <div id="displayArea"></div>
+    <div id="alertModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-icon">&#9888;</span>
+            <p class="alertModalText"></p>
+            <button id="alertButtonOk" class="button-1">OK</button>
+        </div>
+    </div>
 
-  <!--  <script src="players.js"></script>-->
-    <script type="module" src="main.js"></script>
+    <script src="players.js"></script>
+    <script src="2023fantasy.js"></script>
+    <script src="main.js"></script>
 
 </body>

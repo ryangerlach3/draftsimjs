@@ -809,5 +809,3 @@ const players = [
     {"player_id": "CD_I1013165", "name": "Andy Moniz Wakefield", "team": "ME", "fantasy_average": 0, "rank": 807, "positions": ["Forward"]},
     {"player_id": "CD_I1012879", "name": "Cody Raak", "team": "WB", "fantasy_average": 0, "rank": 808, "positions": ["Defender", "Forward"]},
   ];
-  
-  export default players;

@@ -1,4 +1,12 @@
-import players from './players.js';
+const firebaseConfig = {
+    apiKey: "AIzaSyBFwrNNgLWCZSkUGgKaDXeOY5Vem13uQfg",
+    databaseURL: "https://aflfantasypod-default-rtdb.firebaseio.com",
+    projectId: "aflfantasypod",
+    appId: "1:141895384483:web:565271ffa59bb56b45ae16"
+};
+  
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 
 // Global variables to store user inputs
 let numPlayersPerTeam;
@@ -7,14 +15,15 @@ let numTeams;
 let userDraftPosition;
 let draftType;
 let userTeam;
-let computerTeams;
-let availablePlayers = [];
-
-
-// Function to start the draft simulation
+let currentPickNumber = 0;
+let pickLog = [{"pick":"", "name":"", "position":""}];
+let ADP = new Array;
+let computerTeams = new Array;
+let availablePlayers = new Array;
+let allTeams = new Array;
 class Player {
     constructor(id, name, positions, rank, fantasy_average, team) {
-        this.id = id;
+        this.player_id = id;
         this.name = name;
         this.positions = positions;
         this.rank = rank;
@@ -46,7 +55,7 @@ class Team {
         };
     }
     
-    addPlayer(player, isUserTeam = true) {
+    addPlayer(player, position) {
         // Check if team is full
         const totalPlayers = Object.values(this.players).flat().length;
         if (totalPlayers >= this.teamSize) {
@@ -57,120 +66,44 @@ class Team {
         // Check if the player is already in the team
         for (const positionPlayers of Object.values(this.players)) {
             if (positionPlayers.includes(player)) {
-                console.log("DEBUG: Player is already in the team.");
+                console.log(`DEBUG: ${player.name} is already in the team.`);
                 return false;
             }
         }
 
         // Determine available positions for the player
-        const availablePositions = player.positions.filter(position => 
-            this.players[position].length < this.maxPlayers[position]);
+        const availablePositions = player.positions.filter(position => this.players[position].length < this.maxPlayers[position]);
+        const availablePositionsSrting = availablePositions.toString();
+        const chosenPosition = position;
 
-        // Handle user team logic
-        if (isUserTeam) {
-            if (availablePositions.length > 0) {
-                let chosenPosition = availablePositions[0]; // Simplification for example
-                this.players[chosenPosition].push(player);
-                console.log(`DEBUG: Player added to ${chosenPosition}.`);
-                return true;
-            } else {
-                // Add to bench without limit
-                this.players['Bench'].push(player);
-                console.log("DEBUG: Player added to Bench.");
-                return true;
-            }
+        if (availablePositions.length === 1 && availablePositionsSrting !== chosenPosition) {
+            showAlertModal(`${chosenPosition} position is full, adding ${player.name} to ${availablePositionsSrting}`);
+            this.players[availablePositionsSrting].push(player);
+            displayAllFinalTeams();
+            return true;
+        } else if (availablePositions.length > 0) {
+            this.players[chosenPosition].push(player);
+            displayAllFinalTeams();
+            return true;
+        } else {
+            showAlertModal(`${chosenPosition} position is full, adding ${player.name} to Bench`);
+            this.players['Bench'].push(player);
+            displayAllFinalTeams();
+            return true;
         }
-    
-            // Handle computer team logic
-            else {
-                if (availablePositions.length > 0) {
-                    let chosenPosition = availablePositions[0]; // Simplification for example
-                    this.players[chosenPosition].push(player);
-                    console.log(`DEBUG: Player added to ${chosenPosition} (computer team).`);
-                    return true;
-                } else if (this.players['Bench'].length < this.maxPlayers['Bench']) {
-                    this.players['Bench'].push(player);
-                    console.log("DEBUG: Player added to Bench (computer team).");
-                    return true;
-                } else {
-                    console.log("DEBUG: No available positions for player (computer team).");
-                    return false;
-                }
-            }
-        }
+    }
 
-    draftComputerPlayer(availablePlayers) {
-        console.log("Computer is making a draft pick...");
-            
-        // Calculate position needs
-        const positionNeeds = {};
-        for (const position in this.maxPlayers) {
-            positionNeeds[position] = this.maxPlayers[position] - this.players[position].length;
+    // Add a player to the bench if there is space and they are not already on the team
+    addPlayerToBench(player) {
+        const isPlayerInTeam = Object.values(this.players).some(playerList => playerList.includes(player));
+        if (isPlayerInTeam) {
+            return false; // Player is already in the team, don't add to the bench
         }
-        
-        // Exclude bench for now to fill on-field positions first
-        const unfilledPositions = {};
-        for (const position in positionNeeds) {
-            if (position !== 'Bench' && positionNeeds[position] > 0) {
-                    unfilledPositions[position] = positionNeeds[position];
-            }
+        if (this.players['Bench'].length < this.maxPlayers['Bench']) {
+            this.players['Bench'].push(player);
+            return true;
         }
-        
-        // Calculate the priority score for each player
-        const playerScores = availablePlayers.map(player => {
-            let preferredPosition = null;
-        
-            // Check for dual-position players
-            if (player.positions.length > 1 && player.positions.includes('Midfielder')) {
-                for (const position of player.positions) {
-                    if (position !== 'Midfielder' && unfilledPositions[position] > 0) {
-                        preferredPosition = position;
-                        break;
-                    }
-                }
-            }
-        
-            // Score calculation
-            for (const position of preferredPosition ? [preferredPosition] : player.positions) {
-                if (unfilledPositions[position]) {
-                    const rankScore = (1 / player.rank) * 0.6;
-                    const positionalNeedScore = (unfilledPositions[position] / this.maxPlayers[position]) * 0.4;
-                    const score = rankScore + positionalNeedScore;
-                    return { score, player, position };
-                }
-            }
-        }).filter(scoreData => scoreData !== undefined);
-        
-        // Sort players by score
-        playerScores.sort((a, b) => b.score - a.score);
-        
-        // Try to draft the best player based on the calculated score
-        for (const { score, player, position } of playerScores) {
-            if (positionNeeds[position] > 0) {
-                player.currentPosition = position;
-                this.players[position].push(player);
-                console.log(`${player.name} has been drafted as a ${position}`);
-                const index = availablePlayers.indexOf(player);
-                availablePlayers.splice(index, 1);
-                return { player, position };
-            }
-        }
-        
-        // Consider the bench
-        if (positionNeeds['Bench'] > 0) {
-            const bestBenchPlayer = availablePlayers.reduce((best, current) => 
-                (1 / current.rank) > (1 / best.rank) ? current : best
-            );
-            bestBenchPlayer.currentPosition = 'Bench';
-            this.players['Bench'].push(bestBenchPlayer);
-            console.log(`${bestBenchPlayer.name} has been added to the bench`);
-            const index = availablePlayers.indexOf(bestBenchPlayer);
-            availablePlayers.splice(index, 1);
-            return { player: bestBenchPlayer, position: 'Bench' };
-        }
-        
-        // No suitable player was found
-        return null;
+        return false;
     }
 
     totalPlayers() {
@@ -194,32 +127,31 @@ class Team {
         const totalPlayers = this.totalPlayers();
         return totalPlayers >= this.teamSize;
     }
-    
-    // Add a player to the bench if there is space and they are not already on the team
-    addPlayerToBench(player) {
-        const isPlayerInTeam = Object.values(this.players).some(playerList => playerList.includes(player));
-        if (isPlayerInTeam) {
-            return false; // Player is already in the team, don't add to the bench
-        }
-        if (this.players['Bench'].length < this.maxPlayers['Bench']) {
-            this.players['Bench'].push(player);
-            return true;
-        }
-        return false;
-    }
+}
+
+async function startDraftSimulation() {
+    const myTeamTab = document.getElementById("myTeam");
+    const newText = `My Team ${chosenConfig.defenders}-${chosenConfig.midfielders}-${chosenConfig.ruck}-${chosenConfig.forwards}`;
+    myTeamTab.querySelector("h3").textContent = newText;
+
+    const playersButton = document.getElementById('playersButton');
+    playersButton.click();
+
+    const players = await setupDraft();
+    createSelectPlayerTable(players);
+    displayAllFinalTeams();
+    proceedToNextDraftRound(0);
 }
 
 // Set the number of players per team
 function setNumPlayersPerTeam() {
     numPlayersPerTeam = document.getElementById('numPlayersPerTeam').value;
-    console.log(document.getElementById('numPlayersPerTeam').value)
-    console.log(`Number of players per team is set to: ${numPlayersPerTeam}`);
-    document.getElementById('configChoiceSection').style.display = 'block';
+    showElements(['numTeamsSection']);
     checkAllInputsSet();
 }
 
 // Set the chosen configuration
-function selectConfiguration(configNumber) {
+function selectConfiguration(configNumber, minPlayers) {
     console.log("selectConfiguration called with configNumber:", configNumber);
 
     const positionConfigurations = {
@@ -231,24 +163,39 @@ function selectConfiguration(configNumber) {
     chosenConfig = positionConfigurations[configNumber];
     console.log("Chosen configuration:", chosenConfig);
 
-    document.getElementById('numTeamsSection').style.display = 'block';
-    console.log("numTeamsSection display set to block");
+    document.getElementById('numPlayersPerTeam').min = minPlayers;
+    document.getElementById('numPlayersPerTeam').value = minPlayers;
 
+    showElements(["numPlayersPerTeamSection"]);
     checkAllInputsSet();
 }
-
 
 // Set the number of teams
 function setNumTeams() {
     numTeams = document.getElementById('numTeams').value;
-    document.getElementById('userDraftPositionSection').style.display = 'block';
+    showElements(["userDraftPositionSection"]);
     checkAllInputsSet();
 }
 
 // Set the user's draft position
 function setUserDraftPosition() {
     userDraftPosition = document.getElementById('userDraftPosition').value;
-    document.getElementById('draftTypeSection').style.display = 'block';
+
+    userTeam = new Team(numPlayersPerTeam, chosenConfig);
+
+    for (let i = 0; i < numTeams - 1; i++) {
+        computerTeams.push(new Team(numPlayersPerTeam, chosenConfig));
+    }
+
+    for (let i = 0; i < numTeams; i++) {
+        if (i === userDraftPosition - 1) {
+            allTeams.push(userTeam);
+        } else {
+            allTeams.push(computerTeams.shift());
+        }
+    }
+
+    showElements(['draftTypeSection']);
     checkAllInputsSet();
 }
 
@@ -259,161 +206,255 @@ function setDraftType() {
     } else if (document.getElementById('linear').checked) {
         draftType = 'linear';
     } else {
-        alert('Please select a draft type.');
-        return;
+        return showAlertModal('Please select a draft type.')
     }
+
     checkAllInputsSet();
 }
 
-// Check if all inputs are set
 function checkAllInputsSet() {
     if (numPlayersPerTeam && chosenConfig && numTeams && userDraftPosition && draftType) {
-        console.log(`All inputs set. Enabling start draft button. 
-                     Players per team: ${numPlayersPerTeam}, 
-                     Chosen configuration: ${JSON.stringify(chosenConfig)}, 
-                     Number of teams: ${numTeams}, 
-                     User draft position: ${userDraftPosition}, 
-                     Draft type: ${draftType}`);
         document.getElementById('startDraftButton').disabled = false;
+        showElements(["startDraftButton"]);
     } else {
-        console.log('Not all inputs are set. Start draft button remains disabled.');
         document.getElementById('startDraftButton').disabled = true;
     }
 }
 
+async function setupDraft() {
+    const res = await getADP(true);
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('setNumPlayersPerTeamButton').addEventListener('click', setNumPlayersPerTeam);
-    
-    document.querySelectorAll('.configButton').forEach(button => {
-        button.addEventListener('click', () => {
-            const configNumber = button.getAttribute('data-config');
-            selectConfiguration(parseInt(configNumber, 10));
-        });
-    });
-    
-    document.getElementById('setNumTeamsButton').addEventListener('click', setNumTeams);
-    document.getElementById('setUserDraftPositionButton').addEventListener('click', setUserDraftPosition);
-    document.getElementById('setDraftTypeButton').addEventListener('click', setDraftType);
-    document.getElementById('startDraftButton').addEventListener('click', startDraftSimulation);
-});
-
-
-function setupDraft() {
-    // Use the imported players as the available players for the draft
-    availablePlayers = players.map(playerData => new Player(
-        playerData.id,
-        playerData.name,
-        playerData.positions,
-        playerData.rank,
-        playerData.fantasy_average, // Ensure this matches the property in your Player class
-        playerData.team
-    ));
-
-    console.log("Available Players:", availablePlayers);
-}
-
-function startDraftSimulation() {
-    // Initialize the draft simulation here
-    // This should only set up the draft and start the first turn
-    setupDraft();
-    proceedToNextDraftRound(0); // Start with round 0
-}
-
-    // Initialize the user team with the chosen configuration
-    userTeam = new Team(numPlayersPerTeam, chosenConfig);
-
-    // Initialize computer teams. We'll assume 'numTeams' includes the user team.
-    computerTeams = [];
-    for (let i = 0; i < numTeams - 1; i++) {
-        computerTeams.push(new Team(numPlayersPerTeam, chosenConfig));
+    function calculatePercentileRank(value, array) {
+        const sortedArray = array.slice().sort((a, b) => a - b);
+        const index = sortedArray.indexOf(value);
+        return index / (sortedArray.length - 1);
     }
-
-    // Create an array of all teams and insert the user team at the specified draft position
-    allTeams = [];
-    for (let i = 0; i < numTeams; i++) {
-        if (i === userDraftPosition - 1) {
-            allTeams.push(userTeam);
-        } else {
-            allTeams.push(computerTeams.shift());
+    
+    const playersByADP = players.map(player => {
+        const correspondingRes = res.find(resPlayer => resPlayer.player_id === player.player_id);
+        if (correspondingRes) {
+            const percentileRank = calculatePercentileRank(correspondingRes.adp, res.map(p => p.adp));
+            player.rank = Math.ceil(percentileRank * 100);
         }
+        return player;
+    });
+
+    const playerObjects = await Promise.all(playersByADP.map(async (playerData) => {
+        return new Player(
+            playerData.player_id,
+            playerData.name,
+            playerData.positions,
+            playerData.rank,
+            playerData.fantasy_average,
+            playerData.team
+        );
+    }));
+
+    availablePlayers = playerObjects;
+    return playerObjects;
 }
 
-function proceedToNextDraftRound(roundNumber) {
+async function createSelectPlayerTable(availablePlayers, flag) {
+    const selectPlayerTable = $('#selectPlayerTable').DataTable({
+        retrieve: true,
+        sort: false,
+        searching: true,
+        paging: false,
+        lengthChange: false,
+        info: false,
+        columnDefs: [
+            { targets: [0], title: "Players" },
+            { targets: [1], title: "Position(s)" },
+            { targets: [2], title: "PlayerId", visible: false },
+        ],
+    });
+
+    selectPlayerTable.clear();
+
+    availablePlayers.forEach(player => {
+        selectPlayerTable.row.add([player.name, player.positions.join(', '), player.player_id]);
+    });
+
+    selectPlayerTable.draw();
+
+    // Add event listener for the position filter
+    $('#positionFilter').on('change', function() {
+        var searchTerm = this.value ? this.value : '';
+        selectPlayerTable.column(1).search(searchTerm).draw();
+    });
+
+    if (flag) {
+        return null;
+    } else {
+        return new Promise((resolve) => {
+            $('#selectPlayerTable tbody').on('click', 'tr', function () {
+                const rowData = selectPlayerTable.row(this).data();
+                const playerId = rowData[2];
+                const selectedPlayer = availablePlayers.find(player => player.player_id === playerId);
+                resolve(selectedPlayer);
+            });
+        });
+    }
+}
+
+async function proceedToNextDraftRound(roundNumber) {
     // Check if the draft is over
     if (roundNumber >= numPlayersPerTeam) {
-        console.log("Draft is complete");
-        displayTeams();
-        return;
+        createSelectPlayerTable(availablePlayers, true);
+        displayAllFinalTeams();
+        writeADP();
+
+        return document.getElementById('currentPickSelection').textContent = `Draft is complete`;
     }
 
-    // Iterate through all teams for the current round
+    let user = false;
+    let picksCompleted = 0;
+    
     for (let i = 0; i < allTeams.length; i++) {
         let teamIndex = (draftType === 'snake' && roundNumber % 2 === 1) ? allTeams.length - 1 - i : i;
         let draftingTeam = allTeams[teamIndex];
 
-        // If it's the user's turn
         if (draftingTeam === userTeam) {
+            document.getElementById('currentPickSelection').textContent = `CURRENT PICK: Pick ${currentPickNumber + 1}`;
             console.log("User's turn to pick.");
-            displayAvailablePlayers(availablePlayers, roundNumber, teamIndex);
-            break; // We break the loop waiting for the user's input
+
+            while (!user) {
+                const selectedPlayer = await createSelectPlayerTable(availablePlayers);
+                await userPickPlayer(selectedPlayer);
+                removeFromAvailablePlayers(availablePlayers, selectedPlayer);
+
+                pickLog.push({
+                    "pick": currentPickNumber,
+                    "name": selectedPlayer.name,
+                    "position": selectedPlayer.currentPosition
+                });
+
+                updatePickLog(pickLog);
+                addToADP(selectedPlayer, currentPickNumber);
+                
+                user = true;
+                picksCompleted++;
+            }
         } else {
             // Computer's turn to pick
-            let pickResult = draftComputerPlayer(availablePlayers, draftingTeam);
-            if (pickResult.player) {
-                console.log(`Team ${teamIndex + 1} (computer) picked ${pickResult.player.name}.`);
+            const selectedPlayer = draftComputerPlayer(availablePlayers, draftingTeam);
+            if (selectedPlayer.player) {
+                removeFromAvailablePlayers(availablePlayers, selectedPlayer.player);
+
+                pickLog.push({
+                    "pick": currentPickNumber,
+                    "name": selectedPlayer.player.name,
+                    "position": selectedPlayer.player.currentPosition
+                });
+
+                updatePickLog(pickLog);
+                addToADP(selectedPlayer.player, currentPickNumber);
+                displayAllFinalTeams();
+                picksCompleted++;
+
+                console.log(`Team ${teamIndex + 1} (computer) picked ${selectedPlayer.player.name}.`);
             }
         }
-    }
-}
-
-function displayAvailablePlayers(availablePlayers, roundNumber, teamIndex) {
-    console.log("displayAvailablePlayers function called"); // Log statement
-    console.log("Inside displayAvailablePlayers, received players:", availablePlayers);
-    const container = document.getElementById('playerListContainer');
-    container.style.display = 'block'; // Make the container visible
-    console.log(container.style.display); // Log to console
-    container.innerHTML = ''; // Clear any existing content
-
-    const list = document.createElement('ul'); // Create an unordered list
-    container.appendChild(list);
-
-    // Create list items for each available player
-    availablePlayers.forEach((player) => {
-        const listItem = document.createElement('li');
-        listItem.textContent = player.name;
-        listItem.addEventListener('click', function() {
-            userPickPlayer(player);
+    };
+    
+    await waitForAllPicks();
+    proceedToNextDraftRound(roundNumber + 1);
+    
+    function waitForAllPicks() {
+        return new Promise(resolve => {
+            const checkPicksCompleted = () => {
+                if (picksCompleted === allTeams.length) {
+                    resolve();
+                } else {
+                    setTimeout(checkPicksCompleted, 100);
+                }
+            };
+            checkPicksCompleted();
         });
-        list.appendChild(listItem);
-    });
-}
+    }
 
-function userPickPlayer(player, availablePlayers, roundNumber, teamIndex) {
-    console.log("User's turn to draft");
-    const addedToTeam = userTeam.addPlayer(player, true);
+    function addToADP(player, pick) {
+        const newPlayerObject = {
+            "player_id": player.player_id,
+            "name": player.name,
+            "positions": player.positions,
+            "pick": pick,
+        };
+          
+        ADP.push(newPlayerObject);
+    }
 
-    if (addedToTeam) {
-        console.log(`${player.name} has been drafted to your team.`);
-        // Remove the selected player from available players
+    function removeFromAvailablePlayers(availablePlayers, player) {
         const index = availablePlayers.indexOf(player);
+
         if (index > -1) {
             availablePlayers.splice(index, 1);
+            currentPickNumber++
         }
-        displayTeam(userTeam); // Display the updated team composition
-        document.getElementById('playerListContainer').style.display = 'none';
-        proceedToNextDraftRound(roundNumber + 1); // Move to the next round
-    } else {
-        alert(`Unable to draft ${player.name}. Your team may be full.`);
-        // The function will end here, and the user will need to select another player
-        displayAvailablePlayers(availablePlayers, roundNumber, teamIndex); // Show the list again for the user to pick
     }
-}
+    
+    async function userPickPlayer(player) {
+        return new Promise(resolve => {
+            const options = player.positions;
+    
+            if (options.length > 1) {
+                document.getElementById("positionSelectionModal").style.display = 'block';
+                const selectPlayerPosition = document.getElementById("selectPlayerPosition");
+                selectPlayerPosition.innerHTML = `Select Position - ${player.name}`;
+    
+                const positionButtons = document.getElementById("positionButtons");
+                positionButtons.innerHTML = '';
+    
+                options.forEach(option => {
+                    const button = document.createElement("button");
+                    button.textContent = option;
+                    button.classList.add("button-1");
+                    button.addEventListener("click", function () {
+                        if (options.includes(option)) {
+                            document.getElementById("positionSelectionModal").style.display = 'none';
+                            const addedToTeam = userTeam.addPlayer(player, option);
+    
+                            if (addedToTeam) {
+                                console.log(`${player.name} has been drafted to your team at position ${option}.`);
+                                resolve(player);
+                            } else {
+                                showAlertModal(`Unable to draft ${player.name}. Your team may be full.`);
+                                userPickPlayer(player).then(resolve);
+                            }
+                        }
+                    });
+    
+                    positionButtons.appendChild(button);
+                });
+            } else {
+                const addedToTeam = userTeam.addPlayer(player, player.positions[0]);
+    
+                if (addedToTeam) {
+                    console.log(`${player.name} has been drafted to your team at position ${player.positions[0]}.`);
+                    resolve(player);
+                } else {
+                    showAlertModal(`Unable to draft ${player.name}. Your team may be full.`);
+                    userPickPlayer(player).then(resolve);
+                }
+            }
+        });
+    }
 
-// This function is called when it's time for the user to make a pick
-function initiateUserPick(availablePlayers) {
-    displayAvailablePlayers(availablePlayers);
-    // The code now waits for the user to click on one of the list items
+    function writeADP() {
+        const adpRef = firebase.database().ref('X-ADP');
+        const newDraftId = adpRef.push().key;
+        const adpData = {
+          [newDraftId]: ADP,
+        };
+      
+        adpRef.update(adpData)
+        .then(() => {
+            console.log(`ADP array written to X-ADP with draftId: ${newDraftId}`);
+        })
+        .catch((error) => {
+            console.error('Error writing ADP array:', error);
+        });
+    }
 }
 
 function draftComputerPlayer(availablePlayers, team) {
@@ -452,14 +493,53 @@ function draftComputerPlayer(availablePlayers, team) {
                 const rankScore = (1 / player.rank) * 0.6;
                 const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0.4;
                 const score = rankScore + positionalNeedScore;
+
+                // Find the corresponding player in fantasy2023 using the "id" field
+                const fantasyId = "CD_I" + player.player_id;
+                const fantasyPlayer = fantasy2023.find(fantasyPlayer => fantasyPlayer.id === fantasyId);
+
+                // Adjust age-related score
+                if (fantasyPlayer && fantasyPlayer.age >= 30) {
+                    // Reduce score for players aged 30 or older
+                    score *= 0.9; // Adjust the reduction factor as needed
+                }
+
+                // Compare with career average
+                if (fantasyPlayer && fantasyPlayer.stats && fantasyPlayer.stats.career_avg) {
+                    const careerAvg = fantasyPlayer.stats.career_avg;
+                    const playerAvg = player.fantasy_average;
+
+                    // Adjust score based on career average comparison
+                    if (playerAvg > careerAvg) {
+                        score *= 1.3; // Adjust the increase factor as needed
+                    }
+                }
+
                 playerScores.push({ score, player, position });
             }
         });
     });
+    
+        // Calculate score
+        // (preferredPosition ? [preferredPosition] : player.positions).forEach(position => {
+        //     if (unfilledPositions[position]) {
+        //         const rankScore = (1 / player.rank) * 0.6;
+        //         const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0.4;
+        //         const score = rankScore + positionalNeedScore;
+        //         playerScores.push({ score, player, position });
+        //     }
+        // });
+    // });
 
-    // Sort players by score
-    playerScores.sort((a, b) => b.score - a.score);
+    // Sort players by score & randomize the order if scores are equal
+    playerScores.sort((a, b) => {
+        if (b.score === a.score) {
+            return Math.random() - 0.5;
+        }
 
+        return b.score - a.score;
+    });
+    
     // Try to draft the best player based on the calculated score
     for (const { score, player, position } of playerScores) {
         if (positionNeeds[position] > 0) {
@@ -484,22 +564,349 @@ function draftComputerPlayer(availablePlayers, team) {
     return { player: null, position: null };
 }
 
+function displayAllFinalTeams() {
+    var userIndex = Number(userDraftPosition);
+    var positions = ['Defender', 'Midfielder', 'Forward', 'Ruck', 'Bench'];
+    var tempTeams = [[]].concat(allTeams);
+    var headerObjects = [];
+    console.log(tempTeams)
+    console.log(allTeams)
+    tempTeams.forEach((team, index) => {
+        const headerObj = {
+            targets: [index],
+            title: index === 0 ? '' : (index === userIndex ? 'User Team' : `CPU Team ${index}`),
+        };
 
-function displayTeam(team) {
-    // Logic to display the team's composition goes here
-    // This could involve updating the HTML to show the team's players
-    console.log("Team Composition:", team.players);
-}
-
-
-function displayTeams() {
-    // Display the user's team
-    console.log("User Team:", userTeam);
-
-    // Display each computer team
-    computerTeams.forEach((team, index) => {
-        console.log(`Computer Team ${index + 1}:`, team);
+        headerObjects.push(headerObj);
     });
 
-    // Update the actual HTML here to show teams on the page.
+    const myTeamTable = $('#myTeamTable').DataTable({
+        retrieve: true,
+        sort: false,
+        searching: false,
+        paging: false,
+        lengthChange: false,
+        info: false,
+        columnDefs: [
+            { targets: [0], title: "" },
+            { targets: [1], title: "My Players" },
+        ],
+    });
+
+    const allTeamsTable = $('#allTeamsTable').DataTable({
+        retrieve: true,
+        sort: false,
+        searching: false,
+        paging: false,
+        lengthChange: false,
+        info: false,
+        columnDefs: headerObjects,
+    });
+
+    allTeamsTable.clear();
+    myTeamTable.clear();
+
+    positions.forEach((position) => {
+        var row = [position];
+        var myRow = [position];
+
+        tempTeams.forEach((team, index) => {
+            if (index === 0) {
+                return; // Skip the first row
+            }
+
+            // Add player data based on positions
+            const playersInPosition = team.players[position];
+            const playerNames = playersInPosition.map(player => player.name).join('<br>');
+            row.push(playerNames);
+
+            if (index === userIndex) {
+                return myRow.push(playerNames);
+            }
+        });
+
+        allTeamsTable.row.add(row);
+        myTeamTable.row.add(myRow);
+    });
+
+    myTeamTable.draw();
+    allTeamsTable.draw();
 }
+
+function updatePickLog(log) {
+    const pickLogTable = $('#pickLogTable').DataTable({
+        retrieve: true,
+        sort: false,
+        searching: false,
+        paging: false,
+        lengthChange: false,
+        info: false,
+        columnDefs: [
+            { targets: [0], title: "Pick" },
+            { targets: [1], title: "Players" },
+            { targets: [2], title: "Position" },
+        ],
+    });
+
+    pickLogTable.clear();
+
+    log.forEach((player, i) => {
+        if (i === 0) {
+            return true;
+        } else {
+            pickLogTable.row.add([player.pick, player.name, player.position]).draw();
+        }
+    });
+}
+
+function showAlertModal(message) {
+    const alertModal = document.getElementById('alertModal');
+    const alertModalText = document.getElementsByClassName('alertModalText')[0];
+
+    alertModalText.textContent = message;
+    alertModal.style.display = 'block';
+
+    const button = document.getElementById('alertButtonOk');
+    button.addEventListener('click', function() {
+        alertModal.style.display = 'none';
+    });
+}
+
+function restartApp() {
+    numPlayersPerTeam = undefined;
+    chosenConfig = undefined;
+    numTeams = undefined;
+    userDraftPosition = undefined;
+    draftType = undefined;
+    userTeam = undefined;
+    currentPickNumber = 0;
+    pickLog = [{"pick":"", "name":"", "position":""}];
+    ADP = [];
+    computerTeams = [];
+    availablePlayers = [];
+    allTeams = [];
+
+    destory();
+    updatePickLog(pickLog);
+
+    document.getElementById('currentPickSelection').textContent = '';
+    document.getElementById('numPlayersPerTeamSection').value = '';
+    document.getElementById('numTeamsSection').value = '';
+    document.getElementById('userDraftPositionSection').value = '';
+    document.getElementById('userDraftPosition').value = '';
+    document.getElementById('snake').unchecked;
+    document.getElementById('linear').unchecked;
+
+    hideElements(["playersButton", "myTeamButton", "allTeamButton", "pickLogButton", "resetButton", "numPlayersPerTeamSection", "numTeamsSection", "userDraftPositionSection"]);
+    showElements(["adpButton", "autoDraftButton", "manualDraftButton"]);
+
+    const tabContents = document.getElementsByClassName("tabcontent");
+
+    for (const tabContent of tabContents) {
+        tabContent.classList.add("hidden");
+    }
+
+    document.getElementById('startDraftButton').disabled = true;
+
+    getADP();
+
+    function destory() {
+        const allTeamsTable = $('#allTeamsTable');
+
+        allTeamsTable.DataTable().clear().destroy();
+        $('#allTeamsTable').remove(); 
+
+        const allTeam = document.getElementById("allTeam");
+        allTeam.querySelector("h3").insertAdjacentHTML("afterend", `<table id="allTeamsTable"></table>`);
+    }
+}
+
+/*********************************************/
+//TODO REMOVE THIS FOR PROD ONLY FOR TESTING
+async function getADP(flag) {
+    const adpData = await firebase.database().ref('X-ADP').limitToLast(100).once('value');
+    const data = adpData.val();
+
+    return showADP(data)
+        .then((data) => {
+            if (flag) {
+                return data;
+            } else {
+                return showADPTable(data);
+            }
+        })
+        .catch((error) => {
+            return console.error('Error showing ADP array:', error);
+        });
+
+    async function showADP(data) {
+        const allPlayers = Object.values(data).flat();
+        
+        const groupedPlayers = allPlayers.reduce((acc, player) => {
+            if (!acc[player.player_id]) {
+                acc[player.player_id] = { totalPick: 0, count: 0 };
+            }
+            
+            acc[player.player_id].totalPick += player.pick;
+            acc[player.player_id].count += 1;
+            
+            return acc;
+        }, {});
+        
+        const averagedPlayers = Object.keys(groupedPlayers).map(player_id => {
+            const { totalPick, count } = groupedPlayers[player_id];
+            const averagePick = totalPick / count;
+            
+            return { 
+                player_id, averagePick: parseFloat(averagePick.toFixed(2)) 
+            };
+        });
+        
+        const finalArray = averagedPlayers.map(averagedPlayer => {
+            const originalPlayer = allPlayers.find(player => player.player_id === averagedPlayer.player_id);
+
+            return {
+                name: originalPlayer.name,
+                adp: averagedPlayer.averagePick,
+                player_id: originalPlayer.player_id,
+            };
+        });
+        
+        finalArray.sort((a, b) => a.adp - b.adp);
+        return finalArray;
+    }
+
+    function showADPTable(data) {
+        const adpTable = $('#ADPTable').DataTable({
+            retrieve: true,
+            sort: false,
+            searching: true,
+            paging: false,
+            lengthChange: false,
+            info: false,
+            columnDefs: [
+                { targets: [0], title: "Rank" },
+                { targets: [1], title: "Players" },
+                { targets: [2], title: "ADP" },
+            ],
+        });
+
+        adpTable.clear();
+
+        data.forEach((player, i) => {
+            adpTable.row.add([i + 1, player.name, player.adp]);
+        });
+
+        adpTable.draw();
+    }
+}
+
+function hideElements(elementIds) {
+    elementIds.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.classList.add('hidden');
+        }
+    });
+}
+
+function showElements(elementIds) {
+    elementIds.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.classList.remove('hidden');
+        }
+    });
+}
+
+function openTab(evt, name) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+
+    for (i = 0; i < tabcontent.length; i++) {
+        hideElements([tabcontent[i].id]);
+    }
+
+    tablinks = document.getElementsByClassName("tablinks");
+
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    showElements([name]);
+    evt.currentTarget.className += " active";
+}
+
+/*********************************************/
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.configButton').forEach(button => {
+        button.addEventListener('click', () => {
+            const minPlayersForSelection = button.getAttribute('data-min');
+            const configNumber = button.getAttribute('data-config');
+            selectConfiguration(parseInt(configNumber, 10), minPlayersForSelection);
+        });
+    });
+    
+    /*********************************************/
+    //TODO REMOVE THIS FOR PROD ONLY FOR TESTING
+    document.querySelectorAll('.test').forEach(button => {
+        button.addEventListener('click', () => {
+            const clickedId = button.id;
+    
+            if (clickedId === 'test1') {
+                chosenConfig = {
+                    "defenders": 2,
+                    "midfielders": 3,
+                    "ruck": 1,
+                    "forwards": 2
+                };
+                numPlayersPerTeam = 8;
+            } else if (clickedId === 'test2') {
+                chosenConfig = {
+                    "defenders": 5,
+                    "midfielders": 7,
+                    "ruck": 1,
+                    "forwards": 5
+                };
+                numPlayersPerTeam = 18;
+            } else {
+                chosenConfig = {
+                    "defenders": 6,
+                    "midfielders": 8,
+                    "ruck": 2,
+                    "forwards": 6
+                };
+                numPlayersPerTeam = 22;
+            }
+
+            numTeams = 2;
+            userDraftPosition = 1;
+            draftType = 'snake';
+            document.getElementById('userDraftPosition').value = 1;
+            computerTeams, availablePlayers, allTeams = [];
+            setUserDraftPosition();
+            checkAllInputsSet();
+        });
+    });
+
+    getADP();
+    /*********************************************/
+
+    document.getElementById('setNumPlayersPerTeamButton').addEventListener('click', setNumPlayersPerTeam);
+    document.getElementById('setNumTeamsButton').addEventListener('click', setNumTeams);
+    document.getElementById('setUserDraftPositionButton').addEventListener('click', setUserDraftPosition);
+    document.getElementById('setDraftTypeButton').addEventListener('click', setDraftType);
+    
+    const startDraftButton = document.getElementById('startDraftButton');
+
+    startDraftButton.addEventListener('click', () => {
+        hideElements(["autoDraftButton", "manualDraftButton", "startDraftButton", "draftTypeSection"]);
+        showElements(["playersButton", "myTeamButton", "allTeamButton", "pickLogButton", "resetButton"]);
+        startDraftSimulation();
+    });
+
+    resetButton.addEventListener('click', () => {
+        restartApp();
+    });
+});
