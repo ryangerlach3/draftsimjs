@@ -154,6 +154,22 @@ th, td {
     font-size: 17px;
 }
 
+.position-label {
+    float: left;
+    width: 50%;
+    text-align: left;
+    margin-left: 5px;
+    margin-top: 5px;
+}
+
+#positionFilter {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
+}
+
+
 /* Styles for .tab button on screens less than or equal to 600px wide */
 @media only screen and (max-width: 600px) {
     .tab button {
@@ -174,7 +190,6 @@ th, td {
   
 .tabcontent {
     padding: 6px 12px;
-    border: 1px solid #ccc;
     border-top: none;
 }
 
@@ -204,6 +219,11 @@ th, td {
     margin-top: 5px;
     width: 50%;
 }
+
+#allTeamsTable th, #allTeamsTable td {
+    width: 150px; /* Example width */
+}
+
 
 #positionButtons {
     display: flex;
