@@ -36,7 +36,7 @@
         <button id="pickLogButton" class="tablinks hidden" onclick="openTab(event, 'pickLog')">Pick Log</button>
         <button id="resetButton" class="tablinks hidden red">Reset</button>
       </div>
-      
+
     <div id="adp" class="tabcontent hidden">
         <h3>Average Draft Position</h3>
         <table id="ADPTable"></table>
@@ -92,6 +92,7 @@
         <h3>Select Player</h3>
         <label class="position-label">
             Position:
+            <br>
             <select id="positionFilter">
                 <option value="">All</option>
                 <option value="Defender">Defender</option>
@@ -99,7 +100,8 @@
                 <option value="Ruck">Ruck</option>
                 <option value="Midfielder">Midfielder</option>
             </select>
-        </label>          
+   
+        </label> 
         <table id="selectPlayerTable"></table>
     </div>
 
@@ -137,7 +139,6 @@
     </div>
 
     <script src="players.js"></script>
-    <script src="2023fantasy.js"></script>
     <script src="main.js"></script>
 
 </body>

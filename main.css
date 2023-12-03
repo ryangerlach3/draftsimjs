@@ -17,6 +17,19 @@ th, td {
     padding: 8px;
 }
 
+.user-team-column {
+    background-color: #e6ffe6;
+}
+
+.first-column {
+    background-color: #ccc;
+}
+
+.cpu-team-column {
+    background-color:#f1f1f1;
+    color: black;
+}
+
 .margin-top-0 {
     margin-top: 0px;
 }
@@ -161,24 +174,6 @@ th, td {
     margin-left: 5px;
     margin-top: 5px;
 }
-
-#positionFilter {
-    border: 1px solid #aaa;
-    border-radius: 3px;
-    padding: 5px;
-    background-color: transparent;
-}
-
-
-/* Styles for .tab button on screens less than or equal to 600px wide */
-@media only screen and (max-width: 600px) {
-    .tab button {
-        padding: 10px 10px;
-        font-size: 15px;
-        /* Other styles remain the same, no need to repeat them */
-    }
-}
-
   
 .tab button:hover {
     background-color: #ddd;
@@ -191,6 +186,13 @@ th, td {
 .tabcontent {
     padding: 6px 12px;
     border-top: none;
+}
+
+#positionFilter {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
 }
 
 #selectPlayerTable_wrapper {
@@ -246,4 +248,13 @@ th, td {
 
 .hidden {
     display: none;
+}
+
+/* Styles for .tab button on screens less than or equal to 600px wide */
+@media only screen and (max-width: 600px) {
+    .tab button {
+        padding: 10px 10px;
+        font-size: 15px;
+        /* Other styles remain the same, no need to repeat them */
+    }
 }
