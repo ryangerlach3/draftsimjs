@@ -17,19 +17,6 @@ th, td {
     padding: 8px;
 }
 
-.user-team-column {
-    background-color: #e6ffe6;
-}
-
-.first-column {
-    background-color: #ccc;
-}
-
-.cpu-team-column {
-    background-color:#f1f1f1;
-    color: black;
-}
-
 .margin-top-0 {
     margin-top: 0px;
 }
@@ -83,7 +70,7 @@ th, td {
 }
 
 .button-1 {
-    background-color: #EA4C89;
+    background-color: #0c0081;
     border-radius: 8px;
     border-style: none;
     box-sizing: border-box;
@@ -111,11 +98,11 @@ th, td {
 
 .button-1:hover,
 .button-1:focus {
-    background-color: #F082AC;
+    background-color: #0026ff;
 }
 
 .button-start {
-    background-color: #5b59cf;
+    background-color: #0c0081;
     border-radius: 8px;
     border-style: none;
     box-sizing: border-box;
@@ -254,7 +241,7 @@ th, td {
 @media only screen and (max-width: 600px) {
     .tab button {
         padding: 10px 10px;
-        font-size: 15px;
+        font-size: 12px;
         /* Other styles remain the same, no need to repeat them */
     }
 }

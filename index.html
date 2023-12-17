@@ -28,11 +28,10 @@
 
     <div class="tab">
         <button id="adpButton" class="tablinks" onclick="openTab(event, 'adp')">ADP</button>
-        <button id="autoDraftButton" class="tablinks" onclick="openTab(event, 'autoDraft')">Quick Draft</button>
-        <button id="manualDraftButton" class="tablinks" onclick="openTab(event, 'manualDraft')">Detailed Draft</button>
+        <button id="manualDraftButton" class="tablinks" onclick="openTab(event, 'manualDraft')">Draft Setup</button>
         <button id="playersButton" class="tablinks hidden" onclick="openTab(event, 'players')">Select Player</button>
         <button id="myTeamButton" class="tablinks hidden" onclick="openTab(event, 'myTeam')">My Team</button>
-        <button id="allTeamButton" class="tablinks hidden" onclick="openTab(event, 'allTeam')">All Teams</button>
+        <button id="allTeamButton" class="tablinks hidden" onclick="openTab(event, 'allTeams')">All Teams</button>
         <button id="pickLogButton" class="tablinks hidden" onclick="openTab(event, 'pickLog')">Pick Log</button>
         <button id="resetButton" class="tablinks hidden red">Reset</button>
       </div>
@@ -110,10 +109,7 @@
         <table id="myTeamTable"></table>
     </div>
 
-    <div id="allTeam" class="tabcontent hidden">
-        <h3>All Teams</h3>
-        <table id="allTeamsTable"></table>
-    </div>
+    <div id="allTeams" class="tabcontent hidden"></div>
 
     <div id="pickLog" class="tabcontent hidden">
         <h3>Pick Log</h3>

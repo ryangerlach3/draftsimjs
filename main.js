@@ -40,20 +40,20 @@ class Team {
         this.teamSize = teamSize;
         this.config = config;
         this.maxPlayers = {
-            'Ruck': this.config['ruck'],
-            'Midfielder': this.config['midfielders'],
-            'Defender': this.config['defenders'],
-            'Forward': this.config['forwards'],
-            'Bench': Infinity // Represents float('inf') in Python
+            'DEF': this.config['DEF'],
+            'MID': this.config['MID'],
+            'FWD': this.config['FWD'],
+            'RUC': this.config['RUC'],
+            'BEN': Infinity // Represents float('inf') in Python
         };
 
         // Initialize the players dictionary with empty arrays for each position
         this.players = {
-            'Ruck': [],
-            'Midfielder': [],
-            'Defender': [],
-            'Forward': [],
-            'Bench': []
+            'DEF': [],
+            'MID': [],
+            'FWD': [],
+            'RUC': [],
+            'BEN': []
         };
     }
     
@@ -88,8 +88,8 @@ class Team {
             displayAllFinalTeams();
             return true;
         } else {
-            showAlertModal(`${chosenPosition} position is full, adding ${player.name} to Bench`);
-            this.players['Bench'].push(player);
+            showAlertModal(`${chosenPosition} position is full, adding ${player.name} to BEN`);
+            this.players['BEN'].push(player);
             displayAllFinalTeams();
             return true;
         }
@@ -99,10 +99,10 @@ class Team {
     addPlayerToBench(player) {
         const isPlayerInTeam = Object.values(this.players).some(playerList => playerList.includes(player));
         if (isPlayerInTeam) {
-            return false; // Player is already in the team, don't add to the bench
+            return false; // Player is already in the team, don't add to the Bench
         }
-        if (this.players['Bench'].length < this.maxPlayers['Bench']) {
-            this.players['Bench'].push(player);
+        if (this.players['BEN'].length < this.maxPlayers['BEN']) {
+            this.players['BEN'].push(player);
             return true;
         }
         return false;
@@ -133,7 +133,7 @@ class Team {
 
 async function startDraftSimulation() {
     const myTeamTab = document.getElementById("myTeam");
-    const newText = `My Team ${chosenConfig.defenders}-${chosenConfig.midfielders}-${chosenConfig.ruck}-${chosenConfig.forwards}`;
+    const newText = `My Team ${chosenConfig.DEF}-${chosenConfig.MID}-${chosenConfig.RUC}-${chosenConfig.FWD}`;
     myTeamTab.querySelector("h3").textContent = newText;
 
     const playersButton = document.getElementById('playersButton');
@@ -157,9 +157,9 @@ function selectConfiguration(configNumber, minPlayers) {
     console.log("selectConfiguration called with configNumber:", configNumber);
 
     const positionConfigurations = {
-        1: { defenders: 2, midfielders: 3, ruck: 1, forwards: 2 },
-        2: { defenders: 5, midfielders: 7, ruck: 1, forwards: 5 },
-        3: { defenders: 6, midfielders: 8, ruck: 2, forwards: 6 }
+        1: { DEF: 2, MID: 3, RUC: 1, FWD: 2 },
+        2: { DEF: 5, MID: 7, RUC: 1, FWD: 5 },
+        3: { DEF: 6, MID: 8, RUC: 2, FWD: 6 }
     };
 
     chosenConfig = positionConfigurations[configNumber];
@@ -224,25 +224,34 @@ function checkAllInputsSet() {
 }
 
 async function setupDraft() {
-    const res = await getADP(true);
+    let res;
+
+    try {
+        res = await getADP(true);
+    } catch (error) {
+        console.error('Error fetching ADP:', error.message);
+        res = players;
+    }
 
     function calculatePercentileRank(value, array) {
         const sortedArray = array.slice().sort((a, b) => a - b);
         const index = sortedArray.indexOf(value);
         return index / (sortedArray.length - 1);
     }
-    
+
     const playersByADP = players.map(player => {
-        const correspondingRes = res.find(resPlayer => resPlayer.player_id === player.player_id);
+        const correspondingRes = Array.isArray(res) ? res.find(resPlayer => resPlayer.player_id === player.player_id) : null;
+
         if (correspondingRes) {
             const percentileRank = calculatePercentileRank(correspondingRes.adp, res.map(p => p.adp));
             player.rank = Math.ceil(percentileRank * 100);
         }
+
         return player;
     });
 
     const playerObjects = await Promise.all(playersByADP.map(async (playerData) => {
-        if (playerData.stats?.career_avg === undefined) {
+        if (playerData?.career_avg === undefined) {
             console.log("Career average is undefined for player:", playerData);
         }
     
@@ -254,7 +263,7 @@ async function setupDraft() {
             playerData.fantasy_average,
             playerData.team,
             playerData.dob,
-            playerData.stats.career_avg,
+            playerData.career_avg,
         );
     }));
 
@@ -280,7 +289,7 @@ async function createSelectPlayerTable(availablePlayers, flag) {
     });
 
     selectPlayerTable.clear();
-    console.log(availablePlayers)
+
     availablePlayers.forEach(player => {
         selectPlayerTable.row.add([
             player.name,
@@ -346,13 +355,19 @@ async function proceedToNextDraftRound(roundNumber) {
 
             while (!user) {
                 const selectedPlayer = await createSelectPlayerTable(availablePlayers);
-                await userPickPlayer(selectedPlayer);
+                try {
+                    await userPickPlayer(selectedPlayer);
+                } catch {
+                    return false;
+                }
+
                 removeFromAvailablePlayers(availablePlayers, selectedPlayer);
 
                 pickLog.push({
                     "pick": currentPickNumber,
                     "name": selectedPlayer.name,
-                    "position": selectedPlayer.currentPosition
+                    "position": selectedPlayer.currentPosition,
+                    "team": "User Team"
                 });
 
                 updatePickLog(pickLog);
@@ -370,7 +385,8 @@ async function proceedToNextDraftRound(roundNumber) {
                 pickLog.push({
                     "pick": currentPickNumber,
                     "name": selectedPlayer.player.name,
-                    "position": selectedPlayer.player.currentPosition
+                    "position": selectedPlayer.player.currentPosition,
+                    "team": `CPU Team ${teamIndex}`
                 });
 
                 updatePickLog(pickLog);
@@ -494,7 +510,7 @@ function draftComputerPlayer(availablePlayers, team) {
     // Exclude bench for now to fill on-field positions first
     let unfilledPositions = {};
     for (const position in positionNeeds) {
-        if (position !== 'Bench' && positionNeeds[position] > 0) {
+        if (position !== 'BEN' && positionNeeds[position] > 0) {
             unfilledPositions[position] = positionNeeds[position];
         }
     }
@@ -504,9 +520,9 @@ function draftComputerPlayer(availablePlayers, team) {
         let preferredPosition = null;
 
         // Check for dual-position players
-        if (player.positions.length > 1 && player.positions.includes('Midfielder')) {
+        if (player.positions.length > 1 && player.positions.includes('MID')) {
             for (const position of player.positions) {
-                if (position !== 'Midfielder' && unfilledPositions[position]) {
+                if (position !== 'MID' && unfilledPositions[position]) {
                     preferredPosition = position;
                     break;
                 }
@@ -528,13 +544,12 @@ function draftComputerPlayer(availablePlayers, team) {
 
                 // Adjust age-related score
                 if (fantasyPlayer && age >= 30) {
-                    // Reduce score for players aged 30 or older
-                    score *= 0.9; // Adjust the reduction factor as needed
+                    score *= 0.9;
                 }
 
                 // Compare with career average
-                if (fantasyPlayer && fantasyPlayer.stats && fantasyPlayer.stats.career_avg) {
-                    const careerAvg = fantasyPlayer.stats.career_avg;
+                if (fantasyPlayer && fantasyPlayer.career_avg) {
+                    const careerAvg = fantasyPlayer.career_avg;
                     const playerAvg = player.fantasy_average;
 
                     // Adjust score based on career average comparison
@@ -548,17 +563,6 @@ function draftComputerPlayer(availablePlayers, team) {
         });
     });
     
-        // Calculate score
-        // (preferredPosition ? [preferredPosition] : player.positions).forEach(position => {
-        //     if (unfilledPositions[position]) {
-        //         const rankScore = (1 / player.rank) * 0.6;
-        //         const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0.4;
-        //         const score = rankScore + positionalNeedScore;
-        //         playerScores.push({ score, player, position });
-        //     }
-        // });
-    // });
-
     // Sort players by score & randomize the order if scores are equal
     playerScores.sort((a, b) => {
         if (b.score === a.score) {
@@ -579,43 +583,22 @@ function draftComputerPlayer(availablePlayers, team) {
     }
 
     // Consider the bench
-    if (positionNeeds['Bench'] > 0) {
+    if (positionNeeds['BEN'] > 0) {
         const bestBenchPlayer = availablePlayers.reduce((best, current) => 
             (1 / current.rank) > (1 / best.rank) ? current : best
         );
-        bestBenchPlayer.currentPosition = 'Bench';
-        team.players['Bench'].push(bestBenchPlayer);
+        bestBenchPlayer.currentPosition = 'BEN';
+        team.players['BEN'].push(bestBenchPlayer);
         console.log(`${bestBenchPlayer.name} has been added to the bench`);
-        return { player: bestBenchPlayer, position: 'Bench' };
+        return { player: bestBenchPlayer, position: 'BEN' };
     }
 
     return { player: null, position: null };
 }
 
 function displayAllFinalTeams() {
-    var userIndex = Number(userDraftPosition);
-    var positions = ['Defender', 'Midfielder', 'Forward', 'Ruck', 'Bench'];
-    var tempTeams = [[]].concat(allTeams);
-    var headerObjects = [];
-
-tempTeams.forEach((team, index) => {
-    let className = '';
-    if (index === 0) {
-        className = 'first-column'; // Class for the first column
-    } else if (index === userIndex) {
-        className = 'user-team-column'; // Class for the user's team
-    } else {
-        className = 'cpu-team-column'; // Class for the CPU teams
-    }
-
-    const headerObj = {
-        targets: [index],
-        title: index === 0 ? '' : (index === userIndex ? 'User Team' : `CPU Team ${index}`),
-        className: className
-    };
-
-    headerObjects.push(headerObj);
-});
+    var userIndex = Number(userDraftPosition) - 1;
+    var positions = ['DEF', 'MID', 'FWD', 'RUC', 'BEN'];
     
     const myTeamTable = $('#myTeamTable').DataTable({
         retrieve: true,
@@ -630,50 +613,76 @@ tempTeams.forEach((team, index) => {
         ],
     });
 
-    const allTeamsTable = $('#allTeamsTable').DataTable({
-        retrieve: true,
-        sort: false,
-        searching: false,
-        paging: false,
-        lengthChange: false,
-        info: false,
-        columnDefs: headerObjects,
-    });
-
-    allTeamsTable.clear();
     myTeamTable.clear();
 
     positions.forEach((position) => {
-        var row = [position];
         var myRow = [position];
 
-        tempTeams.forEach((team, index) => {
-            if (index === 0) {
-                return; // Skip the first row
-            }
-
-            // Add player data based on positions
+        allTeams.forEach((team, index) => {
             const playersInPosition = team.players[position];
             const playerNames = playersInPosition.map(player => player.name).join('<br>');
-            row.push(playerNames);
 
             if (index === userIndex) {
-                return myRow.push(playerNames);
+                myRow.push(playerNames);
             }
         });
 
-        allTeamsTable.row.add(row);
         myTeamTable.row.add(myRow);
     });
 
     myTeamTable.draw();
-    allTeamsTable.draw();
+
+    /***************************************/
+
+    allTeams.forEach((team, index) => {
+        const isUserTeam = index === userIndex;
+        const teamName = isUserTeam ? 'User Team' : `CPU Team ${index}`;
+    
+        const tableId = 'teamTable_' + index;
+        const tableContainer = $('#' + tableId);
+    
+        let teamTable;
+    
+        if (tableContainer.length === 0) {
+            teamTable = $('<table>', { id: tableId }).appendTo('#allTeams').DataTable({
+                retrieve: true,
+                sort: false,
+                searching: false,
+                paging: false,
+                lengthChange: false,
+                info: false,
+                columnDefs: [
+                    { targets: [0], title: "TEAM" }, // Update here
+                    { targets: [1], title: "DEF" },
+                    { targets: [2], title: "MID" },
+                    { targets: [3], title: "FWD" },
+                    { targets: [4], title: "RUC" },
+                    { targets: [5], title: "BEN" },
+                ],
+            });
+    
+            $('#allTeams').append('<br>');
+        } else {
+            teamTable = $('#' + tableId).DataTable();
+            teamTable.clear();
+        }
+
+        var row = [teamName]; // Update here
+
+        Object.values(team.players).forEach((position) => {
+            const playerNames = position.map(player => player.name).join('<br>');
+            row.push(playerNames);
+        });
+    
+        teamTable.row.add(row).draw();
+
+        teamTable.draw();
+    });  
 }
 
 function updatePickLog(log) {
     const pickLogTable = $('#pickLogTable').DataTable({
         retrieve: true,
-        sort: false,
         searching: false,
         paging: false,
         lengthChange: false,
@@ -683,18 +692,25 @@ function updatePickLog(log) {
             { targets: [1], title: "Players" },
             { targets: [2], title: "Position" },
         ],
+        // Set initial order - this will apply when the table is first initialized
+        order: [[0, 'desc']]
     });
 
     pickLogTable.clear();
 
     log.forEach((player, i) => {
         if (i === 0) {
+            // Skip if required based on your logic
             return true;
         } else {
-            pickLogTable.row.add([player.pick, player.name, player.position]).draw();
+            pickLogTable.row.add([player.pick, player.name, player.position]);
         }
     });
+
+    // Reapply the order every time the table is updated
+    pickLogTable.order([[0, 'desc']]).draw();
 }
+
 
 function showAlertModal(message) {
     const alertModal = document.getElementById('alertModal');
@@ -723,7 +739,7 @@ function restartApp() {
     availablePlayers = [];
     allTeams = [];
 
-    destory();
+    $('#allTeams').empty();
     updatePickLog(pickLog);
 
     document.getElementById('currentPickSelection').textContent = '';
@@ -746,16 +762,6 @@ function restartApp() {
     document.getElementById('startDraftButton').disabled = true;
 
     getADP();
-
-    function destory() {
-        const allTeamsTable = $('#allTeamsTable');
-
-        allTeamsTable.DataTable().clear().destroy();
-        $('#allTeamsTable').remove(); 
-
-        const allTeam = document.getElementById("allTeam");
-        allTeam.querySelector("h3").insertAdjacentHTML("afterend", `<table id="allTeamsTable"></table>`);
-    }
 }
 
 /*********************************************/
@@ -773,7 +779,7 @@ async function getADP(flag) {
             }
         })
         .catch((error) => {
-            return console.error('Error showing ADP array:', error);
+            return error;
         });
 
     async function showADP(data) {
@@ -893,26 +899,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
             if (clickedId === 'test1') {
                 chosenConfig = {
-                    "defenders": 2,
-                    "midfielders": 3,
-                    "ruck": 1,
-                    "forwards": 2
+                    "DEF": 2,
+                    "MID": 3,
+                    "RUC": 1,
+                    "FWD": 2
                 };
                 numPlayersPerTeam = 8;
             } else if (clickedId === 'test2') {
                 chosenConfig = {
-                    "defenders": 5,
-                    "midfielders": 7,
-                    "ruck": 1,
-                    "forwards": 5
+                    "DEF": 5,
+                    "MID": 7,
+                    "RUC": 1,
+                    "FWD": 5
                 };
                 numPlayersPerTeam = 18;
             } else {
                 chosenConfig = {
-                    "defenders": 6,
-                    "midfielders": 8,
-                    "ruck": 2,
-                    "forwards": 6
+                    "DEF": 6,
+                    "MID": 8,
+                    "RUC": 2,
+                    "FWD": 6
                 };
                 numPlayersPerTeam = 22;
             }
