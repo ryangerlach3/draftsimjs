@@ -272,30 +272,35 @@ async function setupDraft() {
 }
 
 async function createSelectPlayerTable(availablePlayers, flag) {
+    const adpData = await getADP(true);
     const selectPlayerTable = $('#selectPlayerTable').DataTable({
         retrieve: true,
-        sort: false,
+        sort: true,
         searching: true,
         paging: false,
         lengthChange: false,
         info: false,
+        order: [[3, 'desc']],
         columnDefs: [
             { targets: [0], title: "Players" },
             { targets: [1], title: "Position(s)" },
             { targets: [2], title: "Age" },
             { targets: [3], title: "'23 Avg'" },
-            { targets: [4], title: "PlayerId", visible: false },
+            { targets: [4], title: "ADP" }, // New ADP column
+            { targets: [5], title: "PlayerId", visible: false },
         ],
     });
 
     selectPlayerTable.clear();
 
     availablePlayers.forEach(player => {
+        const playerAdp = adpData.find(p => p.player_id === player.player_id)?.adp || 'N/A';
         selectPlayerTable.row.add([
             player.name,
             player.positions.join(', '),
             calculateAge(player.dob),
             player.fantasy_average,
+            playerAdp, // Add the ADP here
             player.player_id
         ]);
     });
@@ -314,7 +319,7 @@ async function createSelectPlayerTable(availablePlayers, flag) {
         return new Promise((resolve) => {
             $('#selectPlayerTable tbody').on('click', 'tr', function () {
                 const rowData = selectPlayerTable.row(this).data();
-                const playerId = rowData[4];
+                const playerId = rowData[5];
                 const selectedPlayer = availablePlayers.find(player => player.player_id === playerId);
                 resolve(selectedPlayer);
             });
@@ -532,9 +537,12 @@ function draftComputerPlayer(availablePlayers, team) {
         // Calculate score
         (preferredPosition ? [preferredPosition] : player.positions).forEach(position => {
             if (unfilledPositions[position]) {
-                const rankScore = (1 / player.rank) * 0.6;
-                const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0.4;
+                const rankScore = (1 / player.rank) * 1;
+                const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0;
                 let score = rankScore + positionalNeedScore;
+
+                // Debugging: Log rank score
+                console.log(`Player: ${player.name}, Position: ${position}, Rank Score: ${rankScore.toFixed(2)}`);
 
                 // Find player
                 const fantasyPlayer = players.find(fantasyPlayer => fantasyPlayer.player_id === player.player_id);
@@ -544,7 +552,7 @@ function draftComputerPlayer(availablePlayers, team) {
 
                 // Adjust age-related score
                 if (fantasyPlayer && age >= 30) {
-                    score *= 0.9;
+                    score *= 0.95;
                 }
 
                 // Compare with career average
@@ -554,9 +562,12 @@ function draftComputerPlayer(availablePlayers, team) {
 
                     // Adjust score based on career average comparison
                     if (playerAvg > careerAvg) {
-                        score *= 1.3; // Adjust the increase factor as needed
+                        score *= 1.0; // Adjust the increase factor as needed
                     }
                 }
+
+                // Debugging: Log final score
+                console.log(`Player: ${player.name}, Final Score: ${score.toFixed(2)}`);
 
                 playerScores.push({ score, player, position });
             }
@@ -571,13 +582,16 @@ function draftComputerPlayer(availablePlayers, team) {
 
         return b.score - a.score;
     });
-    
+
     // Try to draft the best player based on the calculated score
     for (const { score, player, position } of playerScores) {
         if (positionNeeds[position] > 0) {
             player.currentPosition = position;
             team.players[position].push(player);
-            console.log(`${player.name} has been drafted as a ${position}`);
+
+            // Debugging: Log drafted player
+            console.log(`Drafted Player: ${player.name}, Position: ${position}, Score: ${score.toFixed(2)}`);
+            
             return { player, position };
         }
     }
@@ -589,7 +603,10 @@ function draftComputerPlayer(availablePlayers, team) {
         );
         bestBenchPlayer.currentPosition = 'BEN';
         team.players['BEN'].push(bestBenchPlayer);
-        console.log(`${bestBenchPlayer.name} has been added to the bench`);
+
+        // Debugging: Log bench player addition
+        console.log(`Added to Bench: ${bestBenchPlayer.name}, Rank: ${bestBenchPlayer.rank}`);
+        
         return { player: bestBenchPlayer, position: 'BEN' };
     }
 
