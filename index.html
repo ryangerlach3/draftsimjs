@@ -24,11 +24,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1 class="margin-bottom-0">Keeper League Mock Draft Simulator</h1>
-
     <div class="tab">
-        <button id="adpButton" class="tablinks" onclick="openTab(event, 'adp')">ADP</button>
         <button id="manualDraftButton" class="tablinks" onclick="openTab(event, 'manualDraft')">Draft Setup</button>
+        <!-- <button id="autoDraftButton" class="tablinks" onclick="openTab(event, 'autoDraft')">Quick Draft</button> -->
+        <button id="adpButton" class="tablinks" onclick="openTab(event, 'adp')">ADP</button>
         <button id="playersButton" class="tablinks hidden" onclick="openTab(event, 'players')">Select Player</button>
         <button id="myTeamButton" class="tablinks hidden" onclick="openTab(event, 'myTeam')">My Team</button>
         <button id="allTeamButton" class="tablinks hidden" onclick="openTab(event, 'allTeams')">All Teams</button>
@@ -95,9 +94,9 @@
             <select id="positionFilter">
                 <option value="">All</option>
                 <option value="DEF">DEF</option>
-                <option value="FWD">FWD</option>
-                <option value="RUC">RUC</option>
                 <option value="MID">MID</option>
+                <option value="RUC">RUC</option>
+                <option value="FWD">FWD</option>
             </select>
    
         </label> 

@@ -477,7 +477,7 @@ const players = [
         "team":"WB",
         "fantasy_average":91.8,
         "career_avg":102.8716,
-        "rank":48,
+        "rank":26,
         "positions":["MID", "FWD"]
     },
     {
@@ -567,7 +567,7 @@ const players = [
         "team":"WB",
         "fantasy_average":83.3,
         "career_avg":82.25,
-        "rank":47,
+        "rank":87,
         "positions":["MID", "FWD"]
     },
     {

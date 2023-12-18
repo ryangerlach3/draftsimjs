@@ -5,6 +5,7 @@ table {
 
 body {
     font-family: 'Titillium Web', sans-serif;
+    padding-top: 50px; /* Adjust according to the height of your tab */
 }
 
 button, .tablinks {
@@ -141,6 +142,10 @@ th, td {
     overflow: hidden;
     border: 1px solid #ccc;
     background-color: #f1f1f1;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000; /* Ensures the tabs stay above other content */
 }
   
 .tab button {
@@ -238,10 +243,16 @@ th, td {
 }
 
 /* Styles for .tab button on screens less than or equal to 600px wide */
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 768px) {
     .tab button {
         padding: 10px 10px;
         font-size: 12px;
         /* Other styles remain the same, no need to repeat them */
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    #selectPlayerTable {
+        width: 520px;
     }
 }
