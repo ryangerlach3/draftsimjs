@@ -290,10 +290,10 @@ async function createSelectPlayerTable(availablePlayers, flag) {
         info: false,
         order: [[3, 'desc']],
         columnDefs: [
-            { targets: [0], title: "Players" },
-            { targets: [1], title: "Position(s)" },
+            { targets: [0], title: "Player" },
+            { targets: [1], title: "Pos" },
             { targets: [2], title: "Age" },
-            { targets: [3], title: "'23 Avg'" },
+            { targets: [3], title: "Avg" },
             { 
                 targets: [4], 
                 title: "ADP",
