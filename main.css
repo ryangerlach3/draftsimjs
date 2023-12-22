@@ -18,6 +18,10 @@ th, td {
     padding: 8px;
 }
 
+.no-wrap {
+    white-space: nowrap;
+}
+
 .margin-top-0 {
     margin-top: 0px;
 }
@@ -65,7 +69,7 @@ th, td {
     justify-content: center;
 }
   
-.alertModalText {
+.alertModalText, .selectPlayerModalText {
     display: flex;
     justify-content: center;
 }
@@ -100,6 +104,18 @@ th, td {
 .button-1:hover,
 .button-1:focus {
     background-color: #0026ff;
+}
+
+.button-confirm,
+.button-confirm:hover,
+.button-confirm:focus {
+    background-color: #0c0081;
+}
+
+.button-cancel,
+.button-cancel:hover,
+.button-cancel:focus {
+    background-color: #0c0081;
 }
 
 .button-start {
@@ -191,6 +207,9 @@ th, td {
 #selectPlayerTable {
     border-collapse: collapse;
     border-spacing: 0;
+    width: 700px !important; /* Adjust this value to your desired width */
+    margin-left: 0 !important;
+    margin-right: auto !important;
 }
 
 #selectPlayerTable thead th {
@@ -248,8 +267,8 @@ th, td {
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media screen and (max-width: 768px) { /* Adjusts for screens up to 600px wide */
     #selectPlayerTable {
-        width: 520px;
+        width: 338px !important; /* Width for mobile devices */
     }
 }

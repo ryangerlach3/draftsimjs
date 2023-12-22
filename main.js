@@ -288,18 +288,13 @@ async function createSelectPlayerTable(availablePlayers, flag) {
         paging: false,
         lengthChange: false,
         info: false,
-        order: [[3, 'desc']],
+        order: [[1, 'desc']],
         columnDefs: [
-            { targets: [0], title: "Player" },
-            { targets: [1], title: "Pos" },
-            { targets: [2], title: "Age" },
-            { targets: [3], title: "Avg" },
-            { 
-                targets: [4], 
-                title: "ADP",
-                type: "adp-sort" // Use the custom sorting type for ADP
-            },
-            { targets: [5], title: "PlayerId", visible: false },
+            { targets: [0], title: "Player", className: "no-wrap" },
+            { targets: [1], title: "Avg", className: "dt-center" },
+            { targets: [2], title: "ADP", className: "dt-center", type: "adp-sort" },
+            { targets: [3], title: "PlayerId", visible: false },
+            { targets: [4], title: "Pos", visible: false },
         ],
     });
 
@@ -307,37 +302,64 @@ async function createSelectPlayerTable(availablePlayers, flag) {
 
     availablePlayers.forEach(player => {
         const playerAdp = adpData.find(p => p.player_id === player.player_id)?.adp || 'N/A';
+        const formattedPlayer = `<div>${player.name}</div><div style="font-size: smaller;"><b>Position: ${player.positions.join(' | ')}</b> (Age: ${calculateAge(player.dob)})</div>`;
+
         selectPlayerTable.row.add([
-            player.name,
-            player.positions.join(', '),
-            calculateAge(player.dob),
+            formattedPlayer,
             player.fantasy_average,
-            playerAdp, // Add the ADP here
-            player.player_id
+            playerAdp,
+            player.player_id,
+            player.positions.join(', '),
+            player.name
         ]);
     });
 
     selectPlayerTable.draw();
 
-    // Add event listener for the position filter
     $('#positionFilter').on('change', function() {
         var searchTerm = this.value ? this.value : '';
-        selectPlayerTable.column(1).search(searchTerm).draw();
+        selectPlayerTable.column(4).search(searchTerm).draw();
     });
 
     if (flag) {
         return null;
     } else {
+        const modal = $('#playerSelectModal');
+        let selectedPlayerId = null;
+    
         return new Promise((resolve) => {
+            const confirmHandler = function () {
+                $('#confirmBtn').off('click', confirmHandler);
+                $('#cancelBtn').off('click', cancelHandler);
+                modal.hide();
+
+                if (selectedPlayerId !== null) {
+                    $('#selectPlayer').html(`Select Player`);
+                    const selectedPlayer = availablePlayers.find(player => player.player_id === selectedPlayerId);
+                    resolve(selectedPlayer);
+                }
+            };
+    
+            const cancelHandler = function () {
+                $('#confirmBtn').off('click', confirmHandler);
+                $('#cancelBtn').off('click', cancelHandler);
+                modal.hide();
+                $('#selectPlayer').html(`Select Player`);
+            };
+    
             $('#selectPlayerTable tbody').on('click', 'tr', function () {
+                const rowId = selectPlayerTable.row(this).id();
                 const rowData = selectPlayerTable.row(this).data();
-                const playerId = rowData[5];
-                const selectedPlayer = availablePlayers.find(player => player.player_id === playerId);
-                resolve(selectedPlayer);
+                const playerName = rowData[5];
+                selectedPlayerId = rowData[3];
+                $('#selectPlayer').html(`Do you want to select ${playerName}?`);
+                modal.show();
+                $('#confirmBtn').on('click', confirmHandler);
+                $('#cancelBtn').on('click', cancelHandler);
             });
         });
-    }
-
+    }    
+    
     function calculateAge(birthdateString) {
         const birthdate = new Date(birthdateString);
         const today = new Date();
@@ -548,8 +570,8 @@ function draftComputerPlayer(availablePlayers, team) {
         // Calculate score
         (preferredPosition ? [preferredPosition] : player.positions).forEach(position => {
             if (unfilledPositions[position]) {
-                const rankScore = (1 / player.rank) * 0.75;
-                const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0.25;
+                const rankScore = (1 / player.rank) * 0.90;
+                const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0.10;
                 let score = rankScore + positionalNeedScore;
 
                 // Find player
@@ -559,7 +581,7 @@ function draftComputerPlayer(availablePlayers, team) {
                 const age = today.getFullYear() - dob.getFullYear();
 
                 // Adjust for user selection ADP
-                score += (1 / player.rankADP) * 0.01;
+                score += (1 / player.rankADP) * 0.02;
 
                 // Adjust age-related score
                 if (fantasyPlayer && age >= 30) {
@@ -711,7 +733,6 @@ function updatePickLog(log) {
             { targets: [1], title: "Players" },
             { targets: [2], title: "Position" },
         ],
-        // Set initial order - this will apply when the table is first initialized
         order: [[0, 'desc']]
     });
 
@@ -719,14 +740,12 @@ function updatePickLog(log) {
 
     log.forEach((player, i) => {
         if (i === 0) {
-            // Skip if required based on your logic
             return true;
         } else {
             pickLogTable.row.add([player.pick, player.name, player.position]);
         }
     });
 
-    // Reapply the order every time the table is updated
     pickLogTable.order([[0, 'desc']]).draw();
 }
 
