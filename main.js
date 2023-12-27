@@ -316,7 +316,7 @@ async function createSelectPlayerTable(availablePlayers, flag) {
 
     selectPlayerTable.draw();
 
-    $('#positionFilter').on('change', function() {
+    $('#positionFilterSelectPlayer').on('change', function() {
         var searchTerm = this.value ? this.value : '';
         selectPlayerTable.column(4).search(searchTerm).draw();
     });
@@ -570,38 +570,47 @@ function draftComputerPlayer(availablePlayers, team) {
         // Calculate score
         (preferredPosition ? [preferredPosition] : player.positions).forEach(position => {
             if (unfilledPositions[position]) {
-                const rankScore = (1 / player.rank) * 0.90;
-                const positionalNeedScore = (unfilledPositions[position] / team.maxPlayers[position]) * 0.10;
+                const rankScore = (1 / player.rank) * 0.80;
+                const positionFillRatio = unfilledPositions[position] / team.maxPlayers[position];
+        
+                // Adjust the importance of positional need based on how full the position is
+                let positionalWeight = 0;
+                if (positionFillRatio >= 0.50) {
+                    // Reduce the positional need weight as the position gets more filled
+                    positionalWeight = 0.20 * (1 - (positionFillRatio - 0.60));
+                }
+        
+                const positionalNeedScore = positionFillRatio * positionalWeight;
                 let score = rankScore + positionalNeedScore;
-
+        
                 // Find player
                 const fantasyPlayer = players.find(fantasyPlayer => fantasyPlayer.player_id === player.player_id);
                 const dob = new Date(fantasyPlayer.dob);
                 const today = new Date();
                 const age = today.getFullYear() - dob.getFullYear();
-
+        
                 // Adjust for user selection ADP
-                score += (1 / player.rankADP) * 0.02;
-
+                score += (1 / player.rankADP) * 0.05;
+        
                 // Adjust age-related score
                 if (fantasyPlayer && age >= 30) {
                     score *= 0.95;
                 }
-
+        
                 // Compare with career average
                 if (fantasyPlayer && fantasyPlayer.career_avg) {
                     const careerAvg = fantasyPlayer.career_avg;
                     const playerAvg = player.fantasy_average;
-
+        
                     // Adjust score based on career average comparison
                     if (playerAvg > careerAvg) {
                         score *= 1.0; // Adjust the increase factor as needed
                     }
                 }
-
+        
                 playerScores.push({ score, player, position });
             }
-        });
+        });      
     });
     
     // Sort players by score & randomize the order if scores are equal
@@ -661,7 +670,10 @@ function displayAllFinalTeams() {
 
         allTeams.forEach((team, index) => {
             const playersInPosition = team.players[position];
-            const playerNames = playersInPosition.map(player => player.name).join('<br>');
+            const playerNames = playersInPosition.map(player => {
+                // Append position for bench players
+                return position === 'BEN' ? `${player.name} (${player.positions.join('/')})` : player.name;
+            }).join('<br>');
 
             if (index === userIndex) {
                 myRow.push(playerNames);
@@ -693,7 +705,7 @@ function displayAllFinalTeams() {
                 lengthChange: false,
                 info: false,
                 columnDefs: [
-                    { targets: [0], title: "TEAM" }, // Update here
+                    { targets: [0], title: "TEAM" },
                     { targets: [1], title: "DEF" },
                     { targets: [2], title: "MID" },
                     { targets: [3], title: "FWD" },
@@ -708,7 +720,7 @@ function displayAllFinalTeams() {
             teamTable.clear();
         }
 
-        var row = [teamName]; // Update here
+        var row = [teamName];
 
         Object.values(team.players).forEach((position) => {
             const playerNames = position.map(player => player.name).join('<br>');
@@ -805,7 +817,7 @@ function restartApp() {
 /*********************************************/
 //TODO REMOVE THIS FOR PROD ONLY FOR TESTING
 async function getADP(flag) {
-    const adpData = await firebase.database().ref('X-ADP').limitToLast(100).once('value');
+    const adpData = await firebase.database().ref('X-ADP').limitToLast(30).once('value');
     const data = adpData.val();
 
     return showADP(data)
@@ -848,11 +860,12 @@ async function getADP(flag) {
 
             return {
                 name: originalPlayer.name,
+                positions: originalPlayer.positions.join('/'), // Join positions with a slash
                 adp: averagedPlayer.averagePick,
                 player_id: originalPlayer.player_id,
             };
         });
-        
+
         finalArray.sort((a, b) => a.adp - b.adp);
         return finalArray;
     }
@@ -868,17 +881,24 @@ async function getADP(flag) {
             columnDefs: [
                 { targets: [0], title: "Rank" },
                 { targets: [1], title: "Players" },
-                { targets: [2], title: "ADP" },
+                { targets: [2], title: "Pos" }, // New column for positions
+                { targets: [3], title: "ADP" },
             ],
         });
 
         adpTable.clear();
 
         data.forEach((player, i) => {
-            adpTable.row.add([i + 1, player.name, player.adp]);
+            adpTable.row.add([i + 1, player.name, player.positions, player.adp]); // Include positions here
         });
 
         adpTable.draw();
+
+        // Event listener for the dropdown
+        $('#positionFilter').on('change', function() {
+            var selectedPosition = this.value;
+            adpTable.column(2).search(selectedPosition).draw(); // Adjust if your positions are in a different column
+        });
     }
 }
 
@@ -950,7 +970,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     "RUC": 1,
                     "FWD": 5
                 };
-                numPlayersPerTeam = 18;
+                numPlayersPerTeam = 22;
             } else {
                 chosenConfig = {
                     "DEF": 6,
@@ -961,7 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 numPlayersPerTeam = 22;
             }
 
-            numTeams = 2;
+            numTeams = 8;
             userDraftPosition = 1;
             draftType = 'snake';
             document.getElementById('userDraftPosition').value = 1;

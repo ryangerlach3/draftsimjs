@@ -1,3 +1,71 @@
+/* Desktop styles */
+@media screen and (min-width: 768px) { /* Adjust this breakpoint as needed */
+    #pickLogTable {
+        width: 700px !important; /* Fixed width for desktop */
+        margin-left: 0 !important; /* Align table to the left */
+    }
+}
+
+/* Mobile styles */
+@media screen and (max-width: 767px) { /* Adjust this breakpoint as needed */
+    #pickLogTable {
+        width: 338px !important; /* Table width adjusts to fit content */
+        margin: 0 auto !important; /* Center the table */
+        table-layout: auto !important; /* Allows columns to adjust to content width */
+    }
+}
+
+#pickLogTable td, #pickLogTable th {
+    white-space: nowrap !important; /* Prevents text from wrapping */
+}
+
+#myTeamTable {
+    width: auto !important; /* Table width adjusts to fit content */
+    table-layout: auto !important; /* Column width adjusts to fit content */
+    margin-left: 0 !important; /* Align table to the left of its container */
+    text-align: left !important; /* Align text to the left within cells */
+}
+
+#myTeamTable td, #myTeamTable th {
+    white-space: nowrap !important; /* Prevents text from wrapping */
+    padding: 10px !important; /* Adds padding around the content in each cell */
+}
+
+/* General table styles */
+#ADPTable {
+    width: 100%; /* Make table width 100% of its container */
+    text-align: center; /* Center align the content */
+}
+
+#ADPTable td, #ADPTable th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Prevents text from spilling over */
+}
+
+/* Styles for Desktop */
+@media screen and (min-width: 768px) {
+    #ADPTable {
+        table-layout: auto; /* Columns will have equal width */
+    }
+
+    #ADPTable_wrapper {
+        width: 700px !important;
+    }
+}
+
+/* Styles for Mobile */
+@media screen and (max-width: 767px) {
+    #ADPTable {
+        table-layout: auto; /* Allows columns to adjust to content width */
+    }
+
+    #ADPTable_wrapper {
+        width: auto !important; /* Table width as wide as its content */
+        font-size: 12px !important;
+    }
+}
+
 table {
     border-collapse: collapse;
     width: 100%;
