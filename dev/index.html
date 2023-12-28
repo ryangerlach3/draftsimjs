@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Keeper League Mock Draft Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="main.css">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/dataTables.jqueryui.min.css">
+
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables JavaScript -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+
+    <!-- Firebase JavaScript -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="tab">
+        <button id="manualDraftButton" class="tablinks" onclick="openTab(event, 'manualDraft')">Draft Setup</button>
+        <button id="autoDraftButton" class="tablinks" onclick="openTab(event, 'autoDraft')">Quick Draft</button>
+        <button id="playersButton" class="tablinks hidden" onclick="openTab(event, 'players')">Select Player</button>
+        <button id="myTeamButton" class="tablinks hidden" onclick="openTab(event, 'myTeam')">My Team</button>
+        <button id="allTeamButton" class="tablinks hidden" onclick="openTab(event, 'allTeams')">All Teams</button>
+        <button id="pickLogButton" class="tablinks hidden" onclick="openTab(event, 'pickLog')">Pick Log</button>
+        <button id="adpButton" class="tablinks" onclick="openTab(event, 'adp')">ADP</button>
+        <button id="resetButton" class="tablinks hidden red">Reset</button>
+      </div>
+
+    <div id="adp" class="tabcontent hidden">
+        <h3>Average Draft Position</h3>
+        <!-- Dropdown for filtering positions -->
+        Position:
+            <br>
+    <select id="positionFilter">
+        <option value="">All</option>
+        <option value="DEF">DEF</option>
+        <option value="MID">MID</option>
+        <option value="RUC">RUC</option>
+        <option value="FWD">FWD</option>
+    </select>
+        <table id="ADPTable"></table>
+    </div>
+      
+    <div id="autoDraft" class="tabcontent hidden">
+        <h3>Quick Draft Setup</h3>
+        <p>Choose an on-field position configuration:</p>
+        <button class="test" id="test1">Test 2-3-1-2</button>
+        <button class="test" id="test2">Test 5-7-1-5</button>
+        <button class="test" id="test3">Test 6-8-2-6</button>
+    </div>
+      
+    <div id="manualDraft" class="tabcontent hidden">
+        <h3>Detailed Draft Setup</h3>
+        <div id="configChoiceSection">
+            <p>Choose an on-field position configuration:</p>
+            <button class="configButton" data-config="1" data-min="8">2-3-1-2</button>
+            <button class="configButton" data-config="2" data-min="18">5-7-1-5</button>
+            <button class="configButton" data-config="3" data-min="22">6-8-2-6</button>
+        </div>
+        <br>
+        <div id="numPlayersPerTeamSection" class="hidden">
+            <label for="numPlayersPerTeam">Enter the number of players per team:</label>
+            <input type="number" id="numPlayersPerTeam" min="1">
+            <button id="setNumPlayersPerTeamButton">Set Max. Player</button>
+        </div>
+        <br>
+        <div id="numTeamsSection" class="hidden">
+            <label for="numTeams">Enter the number of teams in the draft:</label>
+            <input type="number" id="numTeams" min="2">
+            <button id="setNumTeamsButton">Set Teams</button>
+        </div>
+        <br>
+        <div id="userDraftPositionSection" class="hidden">
+            <label for="userDraftPosition">Enter your draft position:</label>
+            <input type="number" id="userDraftPosition" min="1">
+            <button id="setUserDraftPositionButton">Set Position</button>
+        </div>
+        <br>
+        <div id="draftTypeSection" class="hidden">
+            <p>Select the type of draft:</p>
+            <input type="radio" id="snake" name="draftType" value="snake">
+            <label for="snake">Snake Draft</label><br>
+            <input type="radio" id="linear" name="draftType" value="linear">
+            <label for="linear">Linear Draft</label><br>
+            <button id="setDraftTypeButton">Set Draft Type</button>
+        </div>
+    </div>
+
+    <div id="players" class="tabcontent hidden">
+        <h3 id="currentPickSelection"></h3>
+        <h3>Select Player</h3>
+    
+        <!-- Flex container for the filters -->
+        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+    
+            <!-- Position Filter -->
+            <div style="margin-right: 20px;">
+                <label for="positionFilterSelectPlayer" class="position-label">Position:</label>
+                <select id="positionFilterSelectPlayer" class="position-select">
+                    <option value="">All</option>
+                    <option value="DEF">DEF</option>
+                    <option value="MID">MID</option>
+                    <option value="RUC">RUC</option>
+                    <option value="FWD">FWD</option>
+                </select>
+            </div>
+    
+            <!-- Show Favourites Checkbox -->
+            <div>
+                <input type="checkbox" id="showFavourites" class="favourites-checkbox" />
+                <label for="showFavourites">Show Favourites</label>
+            </div>
+    
+        </div>
+    
+        <table id="selectPlayerTable"></table>
+    </div> 
+
+    <div id="myTeam" class="tabcontent hidden">
+        <h3>My Team</h3>
+        <table id="myTeamTable"></table>
+    </div>
+
+    <div id="allTeams" class="tabcontent hidden"></div>
+
+    <div id="pickLog" class="tabcontent hidden">
+        <h3>Pick Log</h3>
+        <table id="pickLogTable"></table>
+    </div>
+
+    <br>
+    <button id="startDraftButton" class="button-start hidden" disabled>Start Draft</button>
+
+    <div id="playerSelectModal" class="modal">
+        <div id="buttonContainer" class="modal-content">
+            <h3 id="selectPlayer" class="margin-top-0">Select Player</h3>
+            <div class="selectPlayerModalText">
+                <button type="button" class="button-1 button-cancel" id="cancelBtn">Cancel</button>
+                <button type="button" class="button-1 button-confirm" id="confirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="positionSelectionModal" class="modal">
+        <div id="buttonContainer" class="modal-content">
+            <h3 id="selectPlayerPosition" class="margin-top-0">Select Position</h3>
+            <div id="positionButtons"></div>
+        </div>
+    </div>
+
+    <div id="alertModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-icon">&#9888;</span>
+            <p class="alertModalText"></p>
+            <button id="alertButtonOk" class="button-1">OK</button>
+        </div>
+    </div>
+
+    <script src="players.js"></script>
+    <script src="main.js"></script>
+
+</body>

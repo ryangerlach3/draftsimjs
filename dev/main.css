@@ -1,0 +1,376 @@
+
+.filters-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.filters-container > div {
+    margin-right: 20px;
+}
+
+/* Desktop styles */
+@media screen and (min-width: 768px) { /* Adjust this breakpoint as needed */
+    #pickLogTable {
+        width: 700px !important; /* Fixed width for desktop */
+        margin-left: 0 !important; /* Align table to the left */
+    }
+}
+
+/* Mobile styles */
+@media screen and (max-width: 767px) { /* Adjust this breakpoint as needed */
+    #pickLogTable {
+        width: 338px !important; /* Table width adjusts to fit content */
+        margin: 0 auto !important; /* Center the table */
+        table-layout: auto !important; /* Allows columns to adjust to content width */
+    }
+}
+
+#pickLogTable td, #pickLogTable th {
+    white-space: nowrap !important; /* Prevents text from wrapping */
+}
+
+#myTeamTable {
+    width: auto !important; /* Table width adjusts to fit content */
+    table-layout: auto !important; /* Column width adjusts to fit content */
+    margin-left: 0 !important; /* Align table to the left of its container */
+    text-align: left !important; /* Align text to the left within cells */
+}
+
+#myTeamTable td, #myTeamTable th {
+    white-space: nowrap !important; /* Prevents text from wrapping */
+    padding: 10px !important; /* Adds padding around the content in each cell */
+}
+
+/* General table styles */
+#ADPTable {
+    width: 100%; /* Make table width 100% of its container */
+    text-align: center; /* Center align the content */
+}
+
+#ADPTable td, #ADPTable th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Prevents text from spilling over */
+}
+
+/* Styles for Desktop */
+@media screen and (min-width: 768px) {
+    #ADPTable {
+        table-layout: auto; /* Columns will have equal width */
+    }
+
+    #ADPTable_wrapper {
+        width: 700px !important;
+    }
+}
+
+/* Styles for Mobile */
+@media screen and (max-width: 767px) {
+    #ADPTable {
+        table-layout: auto; /* Allows columns to adjust to content width */
+    }
+
+    #ADPTable_wrapper {
+        width: auto !important; /* Table width as wide as its content */
+        font-size: 12px !important;
+    }
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+body {
+    font-family: 'Titillium Web', sans-serif;
+    padding-top: 50px; /* Adjust according to the height of your tab */
+}
+
+button, .tablinks {
+    font-family: 'Titillium Web', sans-serif;
+}
+
+th, td {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+
+.no-wrap {
+    white-space: nowrap;
+}
+
+.margin-top-0 {
+    margin-top: 0px;
+}
+
+.margin-bottom-0 {
+    margin-bottom: 0px;
+}
+
+.margin-top-10 {
+    margin-top: -10px;
+}
+
+.inline-flex {
+    display: inline-flex;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-icon {
+    color: orange;
+    font-size: 24px;
+    margin-right: 10px;
+    display: flex;
+    justify-content: center;
+}
+  
+.alertModalText, .selectPlayerModalText {
+    display: flex;
+    justify-content: center;
+}
+
+.button-1 {
+    background-color: #0c0081;
+    border-radius: 8px;
+    border-style: none;
+    box-sizing: border-box;
+    color: #FFFFFF;
+    cursor: pointer;
+    display: inline-block;
+    font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    height: 40px;
+    line-height: 20px;
+    list-style: none;
+    margin: 0 10px;
+    outline: none;
+    padding: 10px 16px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    transition: color 100ms;
+    vertical-align: baseline;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.button-1:hover,
+.button-1:focus {
+    background-color: #0026ff;
+}
+
+.button-confirm,
+.button-confirm:hover,
+.button-confirm:focus {
+    background-color: #0c0081;
+}
+
+.button-cancel,
+.button-cancel:hover,
+.button-cancel:focus {
+    background-color: #0c0081;
+}
+
+.button-start {
+    background-color: #0c0081;
+    border-radius: 8px;
+    border-style: none;
+    box-sizing: border-box;
+    color: #FFFFFF;
+    cursor: pointer;
+    display: inline-block;
+    font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    height: 40px;
+    line-height: 20px;
+    list-style: none;
+    margin: 0 10px;
+    outline: none;
+    padding: 10px 16px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    transition: color 100ms;
+    vertical-align: baseline;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.button-start:disabled {
+    background-color: grey;
+}
+
+.button-start:hover,
+.button-start:focus {
+    background-color: #7271c0;
+}
+
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+    /* position: fixed; */
+}
+  
+.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    font-size: 17px;
+}
+
+.position-label {
+    float: left;
+    width: 50%;
+    text-align: left;
+    margin-left: 5px;
+    margin-top: 5px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.position-select {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
+    display: block;
+}
+
+.favourites-checkbox {
+    margin-right: 5px;
+    vertical-align: middle; /* This aligns the checkbox with the text baseline */
+}
+  
+.tab button:hover {
+    background-color: #ddd;
+}
+  
+.tab button.active {
+    background-color: #ccc;
+}
+  
+.tabcontent {
+    padding: 6px 6px;
+    border-top: none;
+}
+
+#positionFilter {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
+}
+
+#positionFilterSelectPlayer {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
+}
+
+#selectPlayerTable_wrapper {
+    border: none;
+}
+
+#selectPlayerTable {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 700px !important; /* Adjust this value to your desired width */
+    margin-left: 0 !important;
+    margin-right: auto !important;
+}
+
+#selectPlayerTable thead th {
+    padding-left: 10px;
+}
+
+#selectPlayerTable, #selectPlayerTable th, #selectPlayerTable td {
+    border: none;
+}
+
+#ADPTable_filter,
+#selectPlayerTable_filter {
+    float: left;
+    width: 80%;
+    text-align: left;
+    margin-left: 5px;
+    margin-top: 5px;
+    width: 50%;
+}
+
+#allTeamsTable th, #allTeamsTable td {
+    width: 150px; /* Example width */
+}
+
+
+#positionButtons {
+    display: flex;
+    justify-content: center;
+}
+
+#displayArea {
+    margin: 10px 0px 10px 0px;
+}
+
+#showPickLogButton {
+    display: none;
+    margin: 10px 0px;
+}
+
+.red {
+    background-color: red !important;
+    color: white;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Styles for .tab button on screens less than or equal to 600px wide */
+@media only screen and (max-width: 768px) {
+    .tab button {
+        padding: 9px 8px;
+        font-size: 12px;
+        /* Other styles remain the same, no need to repeat them */
+    }
+}
+
+@media screen and (max-width: 768px) { /* Adjusts for screens up to 600px wide */
+    #selectPlayerTable {
+        width: 338px !important; /* Width for mobile devices */
+        font-size: 13px !important;
+    }
+}
