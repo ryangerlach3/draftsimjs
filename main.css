@@ -1,3 +1,14 @@
+
+.filters-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.filters-container > div {
+    margin-right: 20px;
+}
+
 /* Desktop styles */
 @media screen and (min-width: 768px) { /* Adjust this breakpoint as needed */
     #pickLogTable {
@@ -246,6 +257,21 @@ th, td {
     text-align: left;
     margin-left: 5px;
     margin-top: 5px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.position-select {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
+    display: block;
+}
+
+.favourites-checkbox {
+    margin-right: 5px;
+    vertical-align: middle; /* This aligns the checkbox with the text baseline */
 }
   
 .tab button:hover {
@@ -257,11 +283,18 @@ th, td {
 }
   
 .tabcontent {
-    padding: 6px 12px;
+    padding: 6px 6px;
     border-top: none;
 }
 
 #positionFilter {
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: transparent;
+}
+
+#positionFilterSelectPlayer {
     border: 1px solid #aaa;
     border-radius: 3px;
     padding: 5px;
@@ -279,6 +312,12 @@ th, td {
     margin-left: 0 !important;
     margin-right: auto !important;
 }
+
+th.dt-center.sorting {
+    width: 119px !important; /* Adjust this value as needed */
+}
+
+
 
 #selectPlayerTable thead th {
     padding-left: 10px;
@@ -338,5 +377,6 @@ th, td {
 @media screen and (max-width: 768px) { /* Adjusts for screens up to 600px wide */
     #selectPlayerTable {
         width: 338px !important; /* Width for mobile devices */
+        font-size: 13px !important;
     }
 }

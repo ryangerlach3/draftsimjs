@@ -295,22 +295,38 @@ async function createSelectPlayerTable(availablePlayers, flag) {
             { targets: [2], title: "ADP", className: "dt-center", type: "adp-sort" },
             { targets: [3], title: "PlayerId", visible: false },
             { targets: [4], title: "Pos", visible: false },
+            { targets: [5], title: "Name", visible: false },
+            { targets: [6], title: "Favourite", className: "dt-center", orderable: false },
         ],
     });
+
+    const playerIdsBeforeClear = selectPlayerTable
+        .column(6)
+        .nodes()
+        .to$()
+        .find('.favourite-checkbox:checked')
+        .map(function () {
+            const row = $(this).closest('tr');
+            return selectPlayerTable.row(row).data()[3];
+        })
+        .toArray();
 
     selectPlayerTable.clear();
 
     availablePlayers.forEach(player => {
         const playerAdp = adpData.find(p => p.player_id === player.player_id)?.adp || 'N/A';
         const formattedPlayer = `<div>${player.name}</div><div style="font-size: smaller;"><b>Position: ${player.positions.join(' | ')}</b> (Age: ${calculateAge(player.dob)})</div>`;
-
+        const isFavorite = playerIdsBeforeClear.includes(player.player_id);
+        const checkboxHtml = `<input type="checkbox" class="favourite-checkbox" ${isFavorite ? 'checked' : ''}>`;
+    
         selectPlayerTable.row.add([
             formattedPlayer,
             player.fantasy_average,
             playerAdp,
             player.player_id,
             player.positions.join(', '),
-            player.name
+            player.name,
+            checkboxHtml
         ]);
     });
 
@@ -319,6 +335,19 @@ async function createSelectPlayerTable(availablePlayers, flag) {
     $('#positionFilterSelectPlayer').on('change', function() {
         var searchTerm = this.value ? this.value : '';
         selectPlayerTable.column(4).search(searchTerm).draw();
+    });
+
+    $('#showFavourites').on('change', function() {
+        if (this.checked) {
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    return $(selectPlayerTable.row(dataIndex).node()).find('.favourite-checkbox').prop('checked');
+                }
+            );
+        } else {
+            $.fn.dataTable.ext.search.pop();
+        }
+        selectPlayerTable.draw();
     });
 
     if (flag) {
@@ -347,7 +376,12 @@ async function createSelectPlayerTable(availablePlayers, flag) {
                 $('#selectPlayer').html(`Select Player`);
             };
     
-            $('#selectPlayerTable tbody').on('click', 'tr', function () {
+            $('#selectPlayerTable tbody').on('click', 'tr', function (e) {
+                // Ignore clicks on the "Favourite" checkbox
+                if (e.target.type === 'checkbox') {
+                    return;
+                }
+
                 const rowId = selectPlayerTable.row(this).id();
                 const rowData = selectPlayerTable.row(this).data();
                 const playerName = rowData[5];
@@ -368,7 +402,6 @@ async function createSelectPlayerTable(availablePlayers, flag) {
         return ageInYears;
     }
 }
-
 
 async function proceedToNextDraftRound(roundNumber) {
     // Check if the draft is over

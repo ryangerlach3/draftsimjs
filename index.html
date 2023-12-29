@@ -27,11 +27,11 @@
     <div class="tab">
         <button id="manualDraftButton" class="tablinks" onclick="openTab(event, 'manualDraft')">Draft Setup</button>
         <!-- <button id="autoDraftButton" class="tablinks" onclick="openTab(event, 'autoDraft')">Quick Draft</button> -->
+        <button id="adpButton" class="tablinks" onclick="openTab(event, 'adp')">ADP</button>
         <button id="playersButton" class="tablinks hidden" onclick="openTab(event, 'players')">Select Player</button>
         <button id="myTeamButton" class="tablinks hidden" onclick="openTab(event, 'myTeam')">My Team</button>
         <button id="allTeamButton" class="tablinks hidden" onclick="openTab(event, 'allTeams')">All Teams</button>
         <button id="pickLogButton" class="tablinks hidden" onclick="openTab(event, 'pickLog')">Pick Log</button>
-        <button id="adpButton" class="tablinks" onclick="openTab(event, 'adp')">ADP</button>
         <button id="resetButton" class="tablinks hidden red">Reset</button>
       </div>
 
@@ -39,14 +39,14 @@
         <h3>Average Draft Position</h3>
         <!-- Dropdown for filtering positions -->
         Position:
-            <br>
-    <select id="positionFilter">
-        <option value="">All</option>
-        <option value="DEF">DEF</option>
-        <option value="MID">MID</option>
-        <option value="RUC">RUC</option>
-        <option value="FWD">FWD</option>
-    </select>
+        <br>
+        <select id="positionFilter">
+            <option value="">All</option>
+            <option value="DEF">DEF</option>
+            <option value="MID">MID</option>
+            <option value="RUC">RUC</option>
+            <option value="FWD">FWD</option>
+        </select>
         <table id="ADPTable"></table>
     </div>
       
@@ -98,20 +98,25 @@
     <div id="players" class="tabcontent hidden">
         <h3 id="currentPickSelection"></h3>
         <h3>Select Player</h3>
-        <label class="position-label">
-            Position:
-            <br>
-            <select id="positionFilterSelectPlayer">
-                <option value="">All</option>
-                <option value="DEF">DEF</option>
-                <option value="MID">MID</option>
-                <option value="RUC">RUC</option>
-                <option value="FWD">FWD</option>
-            </select>
-   
-        </label> 
+        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <div style="margin-right: 20px;">
+                <label for="positionFilterSelectPlayer" class="position-label">Position:</label>
+                <select id="positionFilterSelectPlayer" class="position-select">
+                    <option value="">All</option>
+                    <option value="DEF">DEF</option>
+                    <option value="MID">MID</option>
+                    <option value="RUC">RUC</option>
+                    <option value="FWD">FWD</option>
+                </select>
+            </div>
+
+            <div>
+                <input type="checkbox" id="showFavourites" class="favourites-checkbox" />
+                <label for="showFavourites">Show Favourites</label>
+            </div>
+        </div>
         <table id="selectPlayerTable"></table>
-    </div>
+    </div> 
 
     <div id="myTeam" class="tabcontent hidden">
         <h3>My Team</h3>
